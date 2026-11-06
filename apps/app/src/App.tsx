@@ -21,33 +21,53 @@ export default function App() {
   const [selectedHazard, setSelectedHazard] = useState<HazardObstacle | null>(null);
 
   useEffect(() => {
-    // Verifica sessão Supabase
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoadingAuth(false);
-    });
+    let isMounted = true;
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    // Timeout de segurança para não travar em tela preta se Supabase demorar
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) setLoadingAuth(false);
+    }, 800);
 
-    return () => subscription.unsubscribe();
+    try {
+      supabase.auth.getSession().then(({ data }) => {
+        if (isMounted) {
+          if (data?.session) setSession(data.session);
+          setLoadingAuth(false);
+        }
+      }).catch(() => {
+        if (isMounted) setLoadingAuth(false);
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+        if (isMounted) setSession(newSession);
+      });
+
+      return () => {
+        isMounted = false;
+        clearTimeout(fallbackTimer);
+        subscription?.unsubscribe();
+      };
+    } catch {
+      if (isMounted) setLoadingAuth(false);
+    }
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {}
     setSession(null);
     setIsDemo(false);
   };
 
+  // Se ainda estiver checando nos primeiros milissegundos
   if (loadingAuth) {
     return (
-      <div className="h-screen w-screen bg-[#050811] flex items-center justify-center text-slate-400 font-mono text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#ff8800] animate-ping" />
-          <span>INICIALIZANDO MGA APPLICATION...</span>
+      <div className="h-screen w-screen bg-[#070b12] flex flex-col items-center justify-center text-slate-300 font-mono text-xs">
+        <div className="flex items-center gap-3 bg-[#0f1422] border border-white/10 px-5 py-3 rounded-2xl shadow-2xl">
+          <div className="w-3 h-3 rounded-full bg-[#ff8800] animate-ping" />
+          <span className="font-bold tracking-wider text-white">MGA AVIATION INTELLIGENCE</span>
+          <span className="text-[10px] text-slate-400 border-l border-white/10 pl-3">Carregando workspace...</span>
         </div>
       </div>
     );
