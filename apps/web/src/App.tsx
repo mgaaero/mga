@@ -27,6 +27,8 @@ import { FlightProfileView } from './components/FlightProfileView';
 import { IntelligenceAiBriefing } from './components/IntelligenceAiBriefing';
 import { MgaNavbar, MgaModuleId } from './components/MgaNavbar';
 import { MgaHome } from './components/MgaHome';
+import { MgaMemoryView } from './components/MgaMemoryView';
+import { MgaMapControls, MapLayerConfig } from './components/MgaMapControls';
 import { SupabaseRouteService } from './services/supabase-route-service';
 import { Airport } from '@mega/types';
 
@@ -40,6 +42,16 @@ export default function App() {
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(HISTORICAL_OCCURRENCES_SEED[0]);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Configuração das camadas táticas do MGA Map
+  const [mapConfig, setMapConfig] = useState<MapLayerConfig>({
+    showTerrain: false,
+    showAirports: true,
+    showOccurrences: true,
+    showHazards: true,
+    showCorridor: true,
+    filterRecentOnly: false
+  });
 
   // Estados de consulta real remota ao Supabase
   const [isSearchingRemote, setIsSearchingRemote] = useState(false);
@@ -591,72 +603,34 @@ export default function App() {
           <div className="flex-1 relative overflow-y-auto">
             {activeTab === 'map' && (
               <div className="w-full h-full relative">
+                {/* Controles Táticos de Camadas do MGA Map */}
+                <MgaMapControls
+                  config={mapConfig}
+                  onChangeConfig={setMapConfig}
+                  occurrencesCount={routeOccurrences.length}
+                  hazardsCount={liveHazards.length}
+                />
+
                 <InteractiveFlightMap
                   origin={originAirport}
                   destination={destAirport}
                   corridorBufferKm={corridorBuffer}
-                  occurrences={routeOccurrences}
-                  hazards={HAZARDS_SEED}
+                  occurrences={mapConfig.showOccurrences ? routeOccurrences : []}
+                  hazards={mapConfig.showHazards ? (liveHazards.length > 0 ? liveHazards : HAZARDS_SEED) : []}
                   selectedOccurrence={selectedOccurrence}
                   onSelectOccurrence={setSelectedOccurrence}
-                  showCorridor={true}
+                  showCorridor={mapConfig.showCorridor}
                 />
               </div>
             )}
 
+            {/* Visualização de MGA Memory & Occurrences */}
             {activeTab === 'occurrences' && (
-              <div className="p-6 max-w-5xl space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-lg text-white">Ocorrências Históricas no Corredor</h3>
-                    <p className="text-xs text-slate-400">
-                      Registros oficiais georreferenciados próximos à rota planejada.
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono text-sky-400 bg-sky-950 px-3 py-1 rounded-md border border-sky-800">
-                    {routeOccurrences.length} ocorrências catalogadas
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {routeOccurrences.map((occ: Occurrence & { distanceToRouteKm?: number }) => {
-                    const badge = getVisualBadge(occ.visualTag);
-                    return (
-                      <div
-                        key={occ.id}
-                        onClick={() => setSelectedOccurrence(occ)}
-                        className="cursor-pointer p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${badge.bg}`}>
-                                {badge.label}
-                              </span>
-                              <span className="text-xs font-mono text-slate-400">{occ.date}</span>
-                              <span className="text-xs font-mono text-slate-500">• {occ.source.officialAgency}</span>
-                            </div>
-                            <h4 className="font-bold text-base text-white">
-                              {occ.aircraft?.model} — Matrícula: {occ.aircraft?.registration}
-                            </h4>
-                            <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
-                              {occ.summary}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-xs font-mono text-sky-400 font-semibold block">
-                              ~{occ.distanceToRouteKm} km da rota
-                            </span>
-                            <span className="text-[11px] text-slate-500">
-                              {occ.location.city}, {occ.location.countryIso}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <MgaMemoryView
+                occurrences={routeOccurrences.length > 0 ? routeOccurrences : HISTORICAL_OCCURRENCES_SEED}
+                selectedOccurrence={selectedOccurrence}
+                onSelectOccurrence={setSelectedOccurrence}
+              />
             )}
 
             {activeTab === 'hazards' && (
