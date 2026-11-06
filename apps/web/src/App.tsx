@@ -29,6 +29,7 @@ import { MgaNavbar, MgaModuleId } from './components/MgaNavbar';
 import { MgaHome } from './components/MgaHome';
 import { MgaMemoryView } from './components/MgaMemoryView';
 import { MgaHazardsView } from './components/MgaHazardsView';
+import { MgaIntelligenceView } from './components/MgaIntelligenceView';
 import { MgaMapControls, MapLayerConfig } from './components/MgaMapControls';
 import { SupabaseRouteService } from './services/supabase-route-service';
 import { Airport } from '@mega/types';
@@ -641,6 +642,15 @@ export default function App() {
                 hazards={liveHazards.length > 0 ? liveHazards : HAZARDS_SEED}
                 selectedHazard={selectedHazard}
                 onSelectHazard={setSelectedHazard}
+              />
+            )}
+
+            {/* Módulo 07: MGA Intelligence — Análise Causal, TEM & Indicadores */}
+            {activeTab === 'ai' && (
+              <MgaIntelligenceView
+                analysis={routeAnalysis}
+                occurrences={routeOccurrences.length > 0 ? routeOccurrences : HISTORICAL_OCCURRENCES_SEED}
+                hazards={liveHazards.length > 0 ? liveHazards : HAZARDS_SEED}
               />
             )}
 
