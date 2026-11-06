@@ -314,7 +314,17 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
             occurrences={occurrences || []}
             hazards={hazards || []}
             selectedOccurrence={null}
-            onSelectOccurrence={() => {}}
+            onSelectOccurrence={(occ) => {
+              // Conecta a seleção do marcador do mapa diretamente ao Dossiê lateral
+              const matchedCase = cases.find(c => 
+                c.registration.toUpperCase() === occ.aircraft?.registration?.toUpperCase() ||
+                c.code.includes(occ.source?.recordIdentifier || '')
+              );
+              if (matchedCase) {
+                setSelectedCase(matchedCase);
+                setShowRightCard(true);
+              }
+            }}
           />
         ) : (
           <InteractiveFlightMap
@@ -334,7 +344,16 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
             occurrences={occurrences || []}
             hazards={hazards || []}
             selectedOccurrence={null}
-            onSelectOccurrence={() => {}}
+            onSelectOccurrence={(occ) => {
+              const matchedCase = cases.find(c => 
+                c.registration.toUpperCase() === occ.aircraft?.registration?.toUpperCase() ||
+                c.code.includes(occ.source?.recordIdentifier || '')
+              );
+              if (matchedCase) {
+                setSelectedCase(matchedCase);
+                setShowRightCard(true);
+              }
+            }}
             showCorridor={true}
           />
         )}

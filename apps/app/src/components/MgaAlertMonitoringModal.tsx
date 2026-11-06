@@ -386,3 +386,4 @@ export const MgaAlertMonitoringModal: React.FC<{ isOpen: boolean; onClose: () =>
     </div>
   );
 };
+

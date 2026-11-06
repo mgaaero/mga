@@ -206,3 +206,4 @@ ${alert.actionUrl}
 
   return { subject, htmlContent, textContent };
 }
+
