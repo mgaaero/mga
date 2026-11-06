@@ -184,10 +184,13 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         ]
       },
       center: [origin?.lon ?? -46.4731, origin?.lat ?? -23.4356],
-      zoom: 7.5,
-      pitch: 55,
-      bearing: -20,
-      maxPitch: 85
+      zoom: 9,
+      minZoom: 5,
+      maxZoom: 18,
+      pitch: 45,
+      bearing: 0,
+      maxPitch: 65,
+      renderWorldCopies: false
     });
 
     // Control WebMapX: Zoom e Bússola
@@ -196,6 +199,14 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
       showCompass: true,
       showZoom: true
     }), 'top-right');
+
+    // Ao afastar o zoom, nivelar suavemente para evitar corte na linha do horizonte
+    map.on('zoom', () => {
+      const z = map.getZoom();
+      if (z < 6.5 && map.getPitch() > 20) {
+        map.setPitch(Math.max(0, (z - 5) * 15));
+      }
+    });
 
     // Control WebMapX: Escala métrica e náutica
     map.addControl(new maplibregl.ScaleControl({
