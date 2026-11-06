@@ -32,6 +32,7 @@ interface MgaNavbarProps {
   onOpenAdmin: () => void;
   onLogout?: () => void;
   userEmail?: string;
+  onOpenAlerts?: () => void;
 }
 
 export const MGA_MODULES = [
@@ -54,7 +55,8 @@ export const MgaNavbar: React.FC<MgaNavbarProps> = ({
   onSelectModule,
   onOpenAdmin,
   onLogout,
-  userEmail
+  userEmail,
+  onOpenAlerts
 }) => {
   return (
     <header className="bg-[#0b0f17] border-b border-slate-800 text-slate-200 sticky top-0 z-50 select-none">
@@ -151,7 +153,18 @@ export const MgaNavbar: React.FC<MgaNavbarProps> = ({
           </nav>
 
           {/* Usuário Autenticado & Sair */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            {onOpenAlerts && (
+              <button
+                onClick={onOpenAlerts}
+                className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-xs font-mono font-bold transition-all"
+                title="Central de Monitoramento e Alertas Automáticos"
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                <span className="hidden sm:inline">ALERTAS ATIVOS</span>
+              </button>
+            )}
+
             {userEmail && (
               <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-300 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800">
                 <User className="w-3.5 h-3.5 text-orange-400" />

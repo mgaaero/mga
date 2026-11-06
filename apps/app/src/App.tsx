@@ -9,6 +9,7 @@ import { MgaIntelligenceView } from './components/MgaIntelligenceView';
 import { MgaAirportsView } from './components/MgaAirportsView';
 import { MgaEnterpriseView } from './components/MgaEnterpriseView';
 import { PreflightBriefingReport } from './components/PreflightBriefingReport';
+import { MgaAlertMonitoringModal } from './components/MgaAlertMonitoringModal';
 import { HISTORICAL_OCCURRENCES_SEED, HAZARDS_SEED, AIRPORTS_DATABASE } from '@mega/shared';
 import { Occurrence, HazardObstacle } from '@mega/types';
 
@@ -26,6 +27,7 @@ export default function App() {
   const [activeModule, setActiveModule] = useState<MgaModuleId>('home');
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(HISTORICAL_OCCURRENCES_SEED[0]);
   const [selectedHazard, setSelectedHazard] = useState<HazardObstacle | null>(null);
+  const [showAlertsModal, setShowAlertsModal] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -113,6 +115,7 @@ export default function App() {
         onOpenAdmin={() => window.open('http://localhost:5174', '_blank')}
         onLogout={handleLogout}
         userEmail={currentUserEmail}
+        onOpenAlerts={() => setShowAlertsModal(true)}
       />
 
       {/* Conteúdo Dinâmico por Módulo */}
@@ -157,6 +160,12 @@ export default function App() {
           <MgaEnterpriseView />
         )}
       </main>
+
+      {/* Modal Central de Monitoramento e Notificações Automáticas */}
+      <MgaAlertMonitoringModal
+        isOpen={showAlertsModal}
+        onClose={() => setShowAlertsModal(false)}
+      />
     </div>
   );
 }
