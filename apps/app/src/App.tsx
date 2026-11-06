@@ -23,10 +23,10 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
 
-    // Timeout de segurança para não travar em tela preta se Supabase demorar
+    // Timeout de escape: nunca trava em tela preta
     const fallbackTimer = setTimeout(() => {
       if (isMounted) setLoadingAuth(false);
-    }, 800);
+    }, 600);
 
     try {
       supabase.auth.getSession().then(({ data }) => {
@@ -60,7 +60,6 @@ export default function App() {
     setIsDemo(false);
   };
 
-  // Se ainda estiver checando nos primeiros milissegundos
   if (loadingAuth) {
     return (
       <div className="h-screen w-screen bg-[#070b12] flex flex-col items-center justify-center text-slate-300 font-mono text-xs">
@@ -83,6 +82,8 @@ export default function App() {
     );
   }
 
+  const currentUserEmail = session?.user?.email || (isDemo ? 'demo.piloto@mga.aero' : undefined);
+
   // Usuário autenticado: Acesso imediato ao MGA Map / Workspace Tático
   return (
     <div className="flex flex-col h-screen w-screen bg-[#070b12] text-slate-100 overflow-hidden font-mono">
@@ -91,6 +92,8 @@ export default function App() {
         activeModule={activeModule}
         onSelectModule={setActiveModule}
         onOpenAdmin={() => window.open('http://localhost:5174', '_blank')}
+        onLogout={handleLogout}
+        userEmail={currentUserEmail}
       />
 
       {/* Conteúdo Dinâmico por Módulo */}
