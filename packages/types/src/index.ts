@@ -101,6 +101,23 @@ export interface HazardObstacle {
   distanceToRouteKm?: number;
 }
 
+export interface Airport {
+  ident: string;
+  name: string;
+  type?: string;
+  latitude: number;
+  longitude: number;
+  lat: number;
+  lon: number;
+  elevationFt?: number;
+  countryIso?: string;
+  city?: string;
+  country?: string;
+  municipality?: string;
+  icao: string;
+  iata?: string;
+}
+
 export interface PreFlightRouteQuery {
   origin: {
     query: string;

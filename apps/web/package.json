@@ -12,6 +12,7 @@
     "@mega/geospatial": "workspace:*",
     "@mega/shared": "workspace:*",
     "@mega/types": "workspace:*",
+    "@supabase/supabase-js": "^2.119.0",
     "@types/leaflet": "^1.9.22",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.16.0",

@@ -59,7 +59,7 @@ export class RouteIntelligenceService {
    */
   public static analyzeRoute(
     request: RouteIntelligenceRequest,
-    airportsDb: Array<{ icao: string; iata: string; name: string; lat: number; lon: number }>,
+    airportsDb: Array<{ icao: string; iata?: string; name: string; lat: number; lon: number }>,
     occurrencesDb: Occurrence[],
     hazardsDb: HazardObstacle[]
   ): RouteIntelligenceAnalysis {

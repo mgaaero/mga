@@ -27,6 +27,8 @@ import { FlightProfileView } from './components/FlightProfileView';
 import { IntelligenceAiBriefing } from './components/IntelligenceAiBriefing';
 import { MgaNavbar, MgaModuleId } from './components/MgaNavbar';
 import { MgaHome } from './components/MgaHome';
+import { SupabaseRouteService } from './services/supabase-route-service';
+import { Airport } from '@mega/types';
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<MgaModuleId>('home');
@@ -38,6 +40,14 @@ export default function App() {
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(HISTORICAL_OCCURRENCES_SEED[0]);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Estados de consulta real remota ao Supabase
+  const [isSearchingRemote, setIsSearchingRemote] = useState(false);
+  const [remoteError, setRemoteError] = useState<string | null>(null);
+  const [isLiveSupabase, setIsLiveSupabase] = useState(false);
+  const [liveOccurrences, setLiveOccurrences] = useState<Occurrence[]>([]);
+  const [liveOriginAirport, setLiveOriginAirport] = useState<Airport | null>(null);
+  const [liveDestAirport, setLiveDestAirport] = useState<Airport | null>(null);
 
   // Telemetria administrativa inicial
   const [telemetry, setTelemetry] = useState<AdminTelemetryData>({
@@ -95,29 +105,74 @@ export default function App() {
     }, 1200);
   };
 
-  // Encontra dados de aeroportos selecionados
-  const originAirport = useMemo(() => 
-    AIRPORTS_DATABASE.find(a => a.icao === origin || a.iata === origin) || AIRPORTS_DATABASE[0],
-    [origin]
-  );
+  // Aeroportos resolvidos (Prioridade Remota do Supabase, Fallback identificado)
+  const originAirport: Airport = useMemo(() => {
+    if (liveOriginAirport) return liveOriginAirport;
+    return AIRPORTS_DATABASE.find(a => a.icao === origin || a.iata === origin) || AIRPORTS_DATABASE[0];
+  }, [liveOriginAirport, origin]);
 
-  const destAirport = useMemo(() => 
-    AIRPORTS_DATABASE.find(a => a.icao === destination || a.iata === destination) || AIRPORTS_DATABASE[5],
-    [destination]
-  );
+  const destAirport: Airport = useMemo(() => {
+    if (liveDestAirport) return liveDestAirport;
+    return AIRPORTS_DATABASE.find(a => a.icao === destination || a.iata === destination) || AIRPORTS_DATABASE[5];
+  }, [liveDestAirport, destination]);
+
+  // Executa busca remota assíncrona ao mudar origem/destino ou corridor
+  const executeRemoteRouteSearch = async (origCode: string, destCode: string, corridor: number) => {
+    setIsSearchingRemote(true);
+    setRemoteError(null);
+
+    try {
+      // 1. Resolução dos aeródromos no Supabase remoto
+      const [remoteOrig, remoteDest] = await Promise.all([
+        SupabaseRouteService.fetchAirport(origCode),
+        SupabaseRouteService.fetchAirport(destCode)
+      ]);
+
+      if (!remoteOrig || !remoteDest) {
+        setRemoteError(`Aeródromo não localizado no Supabase: ${!remoteOrig ? origCode : destCode}. Verifique o código ICAO.`);
+        setIsLiveSupabase(false);
+        setIsSearchingRemote(false);
+        return;
+      }
+
+      setLiveOriginAirport(remoteOrig);
+      setLiveDestAirport(remoteDest);
+
+      // 2. Executa a RPC PostGIS no Supabase
+      const results = await SupabaseRouteService.searchRouteMemory(
+        remoteOrig.latitude,
+        remoteOrig.longitude,
+        remoteDest.latitude,
+        remoteDest.longitude,
+        corridor
+      );
+
+      setLiveOccurrences(results);
+      setIsLiveSupabase(true);
+    } catch (err: any) {
+      console.warn('Falha na consulta remota do Supabase:', err);
+      setRemoteError('Conexão ao Supabase indisponível ou erro na RPC PostGIS. Dados reais não carregados.');
+      setIsLiveSupabase(false);
+    } finally {
+      setIsSearchingRemote(false);
+    }
+  };
 
   // Análise via RouteIntelligenceService com motor elipsoidal WGS84 Karney
   const routeAnalysis: RouteIntelligenceAnalysis = useMemo(() => {
+    const baseAirports = [originAirport, destAirport];
+    const occurrencesToUse = isLiveSupabase ? liveOccurrences : HISTORICAL_OCCURRENCES_SEED;
+
     try {
       return RouteIntelligenceService.analyzeRoute(
         {
-          originCode: origin,
-          destCode: destination,
+          originCode: originAirport.icao || originAirport.ident,
+          destCode: destAirport.icao || destAirport.ident,
           corridorWidthKm: corridorBuffer,
           operationType
         },
-        AIRPORTS_DATABASE,
-        HISTORICAL_OCCURRENCES_SEED,
+        baseAirports,
+        occurrencesToUse,
         HAZARDS_SEED
       );
     } catch {
@@ -132,7 +187,7 @@ export default function App() {
         HAZARDS_SEED
       );
     }
-  }, [origin, destination, corridorBuffer, operationType]);
+  }, [originAirport, destAirport, corridorBuffer, operationType, isLiveSupabase, liveOccurrences]);
 
   const routeOccurrences = routeAnalysis.occurrences;
   const totalRouteDistKm = routeAnalysis.totalDistanceKm;
@@ -177,6 +232,8 @@ export default function App() {
     setCorridorBuffer(corridor);
     setActiveModule('routes');
     setActiveTab('map');
+    // Dispara a consulta assíncrona real ao Supabase
+    executeRemoteRouteSearch(orig, dest, corridor);
   };
 
   return (
@@ -225,6 +282,42 @@ export default function App() {
                 </div>
                 <span className="text-xs text-amber-400 font-mono font-semibold">{totalRouteDistKm} km</span>
               </div>
+
+            {/* Status da Fonte em Tempo Real: Supabase vs Fallback */}
+            <div className="mb-3 px-3 py-1.5 rounded text-xs font-mono flex items-center justify-between border transition-all">
+              {isSearchingRemote ? (
+                <div className="flex items-center space-x-2 text-amber-400">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span>CONSULTANDO SUPABASE REMOTO...</span>
+                </div>
+              ) : isLiveSupabase ? (
+                <div className="flex items-center space-x-2 text-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>FONTE: SUPABASE POSTGIS (DADOS REAIS)</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 text-slate-400">
+                  <span className="w-2 h-2 rounded-full bg-slate-500" />
+                  <span>MODO LOCAL (DEMONSTRAÇÃO OFFLINE)</span>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => executeRemoteRouteSearch(origin, destination, corridorBuffer)}
+                className="text-[10px] text-amber-400 hover:text-amber-300 underline font-semibold ml-2"
+              >
+                Recarregar Supabase
+              </button>
+            </div>
+
+            {/* Aviso de Erro Remoto */}
+            {remoteError && (
+              <div className="mb-3 px-3 py-2 rounded bg-red-950/60 border border-red-500/40 text-xs text-red-300 flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span>{remoteError}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
