@@ -139,6 +139,14 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
       style: {
         version: 8,
         sources: {
+          'satellite': {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            ],
+            tileSize: 256,
+            attribution: 'Esri, Maxar'
+          },
           'osm-base': {
             type: 'raster',
             tiles: [
@@ -147,27 +155,28 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
             tileSize: 256,
             attribution: '© OpenStreetMap contributors'
           },
-          'satellite': {
-            type: 'raster',
+          'terrain-dem': {
+            type: 'raster-dem',
             tiles: [
-              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+              'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
             ],
+            encoding: 'terrarium',
             tileSize: 256,
-            attribution: 'Esri, Maxar'
+            maxzoom: 14
           }
         },
         layers: [
           {
-            id: 'carto-base',
+            id: 'satellite-base',
             type: 'raster',
-            source: 'osm-base',
+            source: 'satellite',
             minzoom: 0,
             maxzoom: 19
           },
           {
-            id: 'satellite-base',
+            id: 'carto-base',
             type: 'raster',
-            source: 'satellite',
+            source: 'osm-base',
             layout: { visibility: 'none' },
             minzoom: 0,
             maxzoom: 19
@@ -175,10 +184,10 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         ]
       },
       center: [origin?.lon ?? -46.4731, origin?.lat ?? -23.4356],
-      zoom: 6,
-      pitch: 0,
-      bearing: 0,
-      maxPitch: 60
+      zoom: 7.5,
+      pitch: 55,
+      bearing: -20,
+      maxPitch: 85
     });
 
     // Control WebMapX: Zoom e Bússola
@@ -241,6 +250,16 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
 
         markers.push(marker);
       });
+      // 1. Elevação Real 3D do Terreno com MapLibre Terrain
+      try {
+        map.setTerrain({
+          source: 'terrain-dem',
+          exaggeration: 1.8
+        });
+      } catch (err) {
+        console.warn('Terrain note:', err);
+      }
+
       // Corredor Geodésico
       map.addSource('route-corridor', {
         type: 'geojson',
