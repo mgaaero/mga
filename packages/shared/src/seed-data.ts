@@ -6,6 +6,88 @@ import { Occurrence, HazardObstacle } from '@mega/types';
  */
 export const HISTORICAL_OCCURRENCES_SEED: Occurrence[] = [
   {
+    id: "cenipa-1996-001",
+    type: "ACCIDENT",
+    visualTag: "HISTORICAL_MEMORY", // ⚪ Memória histórica
+    verificationStatus: "FINAL_REPORT_CONFIRMED",
+    date: "1996-03-02",
+    time: "23:16",
+    location: {
+      description: "Serra da Cantareira, Bairro Água Fria, São Paulo / Guarulhos, SP",
+      city: "São Paulo",
+      state: "SP",
+      countryIso: "BRA",
+      coordinates: {
+        latitude: -23.4167,
+        longitude: -46.5417,
+        elevationFt: 3300
+      }
+    },
+    aircraft: {
+      registration: "PT-LSD",
+      model: "Learjet 25D",
+      manufacturer: "Gates Learjet",
+      serialNumber: "25D-322",
+      aircraftCategory: "Avião"
+    },
+    operatorName: "Madri Táxi Aéreo",
+    flightPhase: "Aproximação Descontinuada / Arremetida",
+    fatalities: 9,
+    injuries: 0,
+    summary: "Colisão com o relevo em voo controlado (CFIT) contra a encosta montanhosa da Serra da Cantareira durante curva após procedimento de arremetida no Aeroporto de Guarulhos (SBGR). O voo transportava os integrantes do grupo Mamonas Assassinas e sua equipe técnica.",
+    investigationFindings: "Relatório Final CENIPA A-012/CENIPA/1996: Execução de curva à esquerda em vez de à direita durante procedimento de arremetida noturna, em descumprimento às cartas aeronáuticas publicadas para SBGR, sob condições de fadiga operacional e desorientação espacial.",
+    source: {
+      slug: "cenipa",
+      name: "Centro de Investigação e Prevenção de Acidentes Aeronáuticos",
+      officialAgency: "Força Aérea Brasileira / SIPAER",
+      recordIdentifier: "A-012/CENIPA/1996",
+      reportUrl: "https://sistema.cenipa.fab.mil.br",
+      publicationDate: "1997-09-18"
+    },
+    peopleInvolved: [
+      {
+        fullName: "Dinho (Alecsander Alves)",
+        role: "PUBLIC_FIGURE",
+        publicSignificance: "Vocalista do grupo Mamonas Assassinas",
+        sourceReference: "Relatório Oficial CENIPA / Certidão de Óbito"
+      },
+      {
+        fullName: "Bento Hinoto (Alberto Hinoto)",
+        role: "PUBLIC_FIGURE",
+        publicSignificance: "Guitarrista do grupo Mamonas Assassinas",
+        sourceReference: "Relatório Oficial CENIPA"
+      },
+      {
+        fullName: "Samuel Reoli (Samuel Reis de Oliveira)",
+        role: "PUBLIC_FIGURE",
+        publicSignificance: "Baixista do grupo Mamonas Assassinas",
+        sourceReference: "Relatório Oficial CENIPA"
+      },
+      {
+        fullName: "Sérgio Reoli (Sérgio Reis de Oliveira)",
+        role: "PUBLIC_FIGURE",
+        publicSignificance: "Baterista do grupo Mamonas Assassinas",
+        sourceReference: "Relatório Oficial CENIPA"
+      },
+      {
+        fullName: "Júlio Rasec (Júlio César)",
+        role: "PUBLIC_FIGURE",
+        publicSignificance: "Tecladista do grupo Mamonas Assassinas",
+        sourceReference: "Relatório Oficial CENIPA"
+      },
+      {
+        fullName: "Jorge Germano Martins",
+        role: "PILOT",
+        sourceReference: "Relatório Oficial CENIPA"
+      },
+      {
+        fullName: "Alberto Yoshhumi Takeda",
+        role: "COPILOT",
+        sourceReference: "Relatório Oficial CENIPA"
+      }
+    ]
+  },
+  {
     id: "cenipa-2021-001",
     type: "ACCIDENT",
     visualTag: "HISTORICAL_MEMORY", // ⚪ Memória histórica

@@ -1,5 +1,6 @@
 export * from './seed-data.js';
 export * from './route-intelligence-service.js';
+export * from './data-intelligence-engine.js';
 export * from './ai/aviation-intelligence-ai.js';
 
 export const AIRPORTS_DATABASE = [
