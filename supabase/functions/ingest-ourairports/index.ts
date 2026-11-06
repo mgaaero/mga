@@ -45,13 +45,13 @@ serve(async (req) => {
 
     let processed = 0;
     let inserted = 0;
+    const batchSize = 250;
+    let currentBatch: any[] = [];
 
-    // Filtra e ingere aeroportos de grande e médio porte prioritários
-    for (let i = 1; i < Math.min(lines.length, 1000); i++) {
+    for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Parser CSV
       const cols = line.split(',');
       if (cols.length < 13) continue;
 
@@ -67,19 +67,35 @@ serve(async (req) => {
       if (!ident || isNaN(lat) || isNaN(lon)) continue;
       processed++;
 
-      const { error: airportErr } = await supabase
-        .from('airports')
-        .upsert({
-          ident,
-          icao,
-          iata,
-          name: name || ident,
-          airport_type: type,
-          coordinates: `SRID=4326;POINT(${lon} ${lat})`,
-          country_iso: country || 'UNK'
-        }, { onConflict: 'ident' });
+      currentBatch.push({
+        ident,
+        icao,
+        iata,
+        name: name || ident,
+        airport_type: type,
+        coordinates: `SRID=4326;POINT(${lon} ${lat})`,
+        country_iso: country || 'UNK'
+      });
 
-      if (!airportErr) inserted++;
+      if (currentBatch.length >= batchSize) {
+        const { error: batchErr } = await supabase
+          .from('airports')
+          .upsert(currentBatch, { onConflict: 'ident' });
+
+        if (!batchErr) inserted += currentBatch.length;
+        currentBatch = [];
+      }
+
+      // Limita a 5000 aeródromos por execução para respeitar o limite de tempo da Edge Function
+      if (processed >= 5000) break;
+    }
+
+    if (currentBatch.length > 0) {
+      const { error: batchErr } = await supabase
+        .from('airports')
+        .upsert(currentBatch, { onConflict: 'ident' });
+
+      if (!batchErr) inserted += currentBatch.length;
     }
 
     await supabase
