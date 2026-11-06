@@ -33,6 +33,7 @@ import { MgaIntelligenceView } from './components/MgaIntelligenceView';
 import { MgaAirportsView } from './components/MgaAirportsView';
 import { MgaEnterpriseView } from './components/MgaEnterpriseView';
 import { MgaMapControls, MapLayerConfig } from './components/MgaMapControls';
+import { MgaTacticalWorkspace } from './components/MgaTacticalWorkspace';
 import { SupabaseRouteService } from './services/supabase-route-service';
 import { Airport } from '@mega/types';
 
@@ -278,11 +279,11 @@ export default function App() {
         onOpenAdmin={() => setIsAdminOpen(true)}
       />
 
-      {/* Renderização Condicional: MGA Home vs Console Tático */}
+      {/* Renderização Condicional: MGA Tactical Workspace Oficial (quando o cliente entra) vs Módulos */}
       {activeModule === 'home' ? (
-        <MgaHome 
-          onSearchRoute={handleSearchFromHome}
-          onExploreModule={(modId) => setActiveModule(modId as MgaModuleId)}
+        <MgaTacticalWorkspace
+          occurrences={liveOccurrences.length > 0 ? liveOccurrences : routeOccurrences}
+          hazards={liveHazards.length > 0 ? liveHazards : HAZARDS_SEED}
         />
       ) : activeModule === 'airports' ? (
         <MgaAirportsView
