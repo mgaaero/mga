@@ -241,6 +241,7 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<RiskCategoryFilter>('ALL');
   const [corridorBufferKm, setCorridorBufferKm] = useState<number>(40);
   const [showRightCard, setShowRightCard] = useState(true);
+  const [showLeftDrawer, setShowLeftDrawer] = useState(true);
   
   // Alternância segura entre o motor 3D WebMapX/MapLibre e o Leaflet tático clássico
   const [mapEngine, setMapEngine] = useState<'WEBMAPX_3D' | 'LEAFLET_2D'>('WEBMAPX_3D');
@@ -347,7 +348,9 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
       </div>
 
       {/* OVERLAY TÁTICO: CARDS DE ROTAS E ACIDENTES DOCUMENTADOS NA LATERAL ESQUERDA */}
-      <div className="absolute top-16 left-5 bottom-4 z-20 w-[330px] flex flex-col pointer-events-none">
+      <div className={`absolute top-16 left-16 bottom-4 z-20 w-[330px] flex flex-col pointer-events-none transition-all duration-300 ${
+        showLeftDrawer ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10 pointer-events-none'
+      }`}>
         
         {/* Barra de Filtro Rápida */}
         <div className="pointer-events-auto mb-2 bg-[#13151b]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 flex items-center gap-2 shadow-2xl">

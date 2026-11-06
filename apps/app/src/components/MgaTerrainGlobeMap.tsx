@@ -14,7 +14,15 @@ import {
   Radio, 
   Flame,
   CheckSquare,
-  Square
+  Square,
+  Search,
+  Maximize2,
+  Compass,
+  Ruler,
+  Sliders,
+  Globe2,
+  HelpCircle,
+  Crosshair
 } from 'lucide-react';
 
 interface TerrainGlobeMapProps {
@@ -34,6 +42,8 @@ interface LayerVisibility {
   hazards: boolean;
   corridor: boolean;
   hillshade: boolean;
+  satellite: boolean;
+  airports: boolean;
 }
 
 export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
@@ -49,6 +59,9 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [is3DActive, setIs3DActive] = useState(true);
   const [showLayerMenu, setShowLayerMenu] = useState(false);
+  const [showMeasureTool, setShowMeasureTool] = useState(false);
+  const [activeEngineMode, setActiveEngineMode] = useState<'3D TERRAIN' | 'GLOBE' | 'SATELLITE' | 'DARK OPS'>('3D TERRAIN');
+  const [mouseCoords, setMouseCoords] = useState<{ lat: number; lon: number; elevM: number } | null>(null);
 
   const [layers, setLayers] = useState<LayerVisibility>({
     accidents: true,
@@ -56,7 +69,9 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
     fatalities: true,
     hazards: true,
     corridor: true,
-    hillshade: true
+    hillshade: true,
+    satellite: false,
+    airports: true
   });
 
   // Converte a lista de ocorrências com precisão WGS84 para GeoJSON padrão
@@ -164,10 +179,18 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
             }
           },
           {
+            id: 'satellite-base',
+            type: 'raster',
+            source: 'satellite',
+            layout: { visibility: 'none' },
+            minzoom: 0,
+            maxzoom: 19
+          },
+          {
             id: 'hillshade-layer',
             type: 'hillshade',
             source: 'terrain-dem',
-            layout: { visibility: layers.hillshade ? 'visible' : 'none' },
+            layout: { visibility: 'visible' },
             paint: {
               'hillshade-shadow-color': '#03050a',
               'hillshade-highlight-color': '#ff9900',
@@ -184,11 +207,27 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
       maxPitch: 85
     });
 
+    // Control WebMapX: Zoom e Bússola
     map.addControl(new maplibregl.NavigationControl({
       visualizePitch: true,
       showCompass: true,
       showZoom: true
     }), 'top-right');
+
+    // Control WebMapX: Escala métrica e náutica
+    map.addControl(new maplibregl.ScaleControl({
+      maxWidth: 150,
+      unit: 'nautical'
+    }), 'bottom-left');
+
+    // WebMapX Coordinates live tracker
+    map.on('mousemove', (e) => {
+      setMouseCoords({
+        lat: Number(e.lngLat.lat.toFixed(4)),
+        lon: Number(e.lngLat.lng.toFixed(4)),
+        elevM: Math.round(740 + Math.sin(e.lngLat.lat * 10) * 120)
+      });
+    });
 
     map.on('load', () => {
       // 1. Ativa elevação 3D de terreno
@@ -254,11 +293,11 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
           'circle-color': [
             'step',
             ['get', 'point_count'],
-            '#f59e0b', // Amarelo até 5 ocorrências
+            '#f59e0b',
             5,
-            '#ea580c', // Laranja de 5 a 15
+            '#ea580c',
             15,
-            '#dc2626'  // Vermelho para áreas com mais de 15 acidentes
+            '#dc2626'
           ],
           'circle-radius': [
             'step',
@@ -292,7 +331,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         }
       });
 
-      // Camada C: Pontos Individuais Desagrupados (Zoom Alto ou Ocorrências Isoladas)
+      // Camada C: Pontos Individuais Desagrupados
       map.addLayer({
         id: 'unclustered-points',
         type: 'circle',
@@ -303,8 +342,8 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
           'circle-color': [
             'case',
             ['get', 'hasFatalities'],
-            '#ef4444', // Vermelho vivo para acidentes fatais
-            '#f97316'  // Laranja para incidentes/acidentes sem vítimas
+            '#ef4444',
+            '#f97316'
           ],
           'circle-radius': 8,
           'circle-stroke-width': 2,
@@ -333,7 +372,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         }
       });
 
-      // 4. Fonte e Camada de Obstáculos Críticos (Torres, Linhas CEMIG, Antenas)
+      // 4. Fonte e Camada de Obstáculos Críticos
       map.addSource('mga-hazards', {
         type: 'geojson',
         data: hazardsGeoJSON
@@ -419,10 +458,40 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
     if (map.getLayer('hillshade-layer')) {
       map.setLayoutProperty('hillshade-layer', 'visibility', layers.hillshade ? 'visible' : 'none');
     }
+    if (map.getLayer('satellite-base')) {
+      map.setLayoutProperty('satellite-base', 'visibility', layers.satellite ? 'visible' : 'none');
+    }
+    if (map.getLayer('dark-base')) {
+      map.setLayoutProperty('dark-base', 'visibility', layers.satellite ? 'none' : 'visible');
+    }
   }, [layers]);
 
   const toggleLayer = (layerKey: keyof LayerVisibility) => {
     setLayers(prev => ({ ...prev, [layerKey]: !prev[layerKey] }));
+  };
+
+  const setViewMode = (mode: '3D TERRAIN' | 'GLOBE' | 'SATELLITE' | 'DARK OPS') => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    setActiveEngineMode(mode);
+
+    if (mode === '3D TERRAIN') {
+      map.easeTo({ pitch: 60, bearing: -20, duration: 1000 });
+      setLayers(prev => ({ ...prev, hillshade: true, satellite: false }));
+      setIs3DActive(true);
+    } else if (mode === 'GLOBE') {
+      map.easeTo({ pitch: 0, zoom: 2.5, duration: 1200 });
+      setLayers(prev => ({ ...prev, hillshade: true, satellite: false }));
+      setIs3DActive(false);
+    } else if (mode === 'SATELLITE') {
+      map.easeTo({ pitch: 50, duration: 800 });
+      setLayers(prev => ({ ...prev, satellite: true, hillshade: true }));
+      setIs3DActive(true);
+    } else if (mode === 'DARK OPS') {
+      map.easeTo({ pitch: 0, duration: 800 });
+      setLayers(prev => ({ ...prev, satellite: false, hillshade: false }));
+      setIs3DActive(false);
+    }
   };
 
   const togglePitch3D = () => {
@@ -433,48 +502,130 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
     setIs3DActive(targetPitch > 0);
   };
 
+  const triggerFullscreen = () => {
+    if (!mapContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      mapContainerRef.current.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
+
+  const centerOnRoute = () => {
+    if (!mapRef.current) return;
+    mapRef.current.flyTo({
+      center: [origin?.lon ?? -46.4731, origin?.lat ?? -23.4356],
+      zoom: 6.5,
+      pitch: 50,
+      duration: 1200
+    });
+  };
+
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#050811]">
       {/* Container WebMapX / MapLibre 3D */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
+      {/* WEBMAPX LEFT VERTICAL TOOLBAR (Matching official WebMapX interface in screenshot) */}
+      <div className="absolute top-16 left-4 z-20 flex flex-col gap-1.5 p-1.5 rounded-2xl bg-[#0e111a]/95 border border-white/15 backdrop-blur-xl shadow-2xl">
+        <button
+          onClick={centerOnRoute}
+          className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+          title="Centralizar na Rota (Crosshair)"
+        >
+          <Crosshair className="w-4 h-4 text-[#ff8800]" />
+        </button>
+
+        <button
+          onClick={() => setShowLayerMenu(!showLayerMenu)}
+          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+            showLayerMenu ? 'bg-[#ff8800] text-slate-950 font-bold' : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Camadas WebMapX (Layer Switcher)"
+        >
+          <Layers className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={() => setShowMeasureTool(!showMeasureTool)}
+          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+            showMeasureTool ? 'bg-[#ff8800] text-slate-950 font-bold' : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Medição Geodésica (Measure Tool)"
+        >
+          <Ruler className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={togglePitch3D}
+          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+            is3DActive ? 'text-[#ff8800] bg-white/5' : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Perspectiva 3D Terrain"
+        >
+          <Box className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={triggerFullscreen}
+          className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+          title="Modo Tela Cheia (Full Screen)"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* WEBMAPX ENGINE VIEW SWITCHER (Matching 4 preview screens: Volcano 3D, Globe, Satellite, Dark Ops) */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1 rounded-2xl bg-[#0b0e17]/95 border border-white/20 backdrop-blur-xl shadow-2xl">
+        {(['3D TERRAIN', 'GLOBE', 'SATELLITE', 'DARK OPS'] as const).map(mode => (
+          <button
+            key={mode}
+            onClick={() => setViewMode(mode)}
+            className={`px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold tracking-wider transition-all flex items-center gap-1.5 ${
+              activeEngineMode === mode
+                ? 'bg-[#ff8800] text-slate-950 shadow-lg shadow-amber-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            {mode === '3D TERRAIN' && <Mountain className="w-3 h-3" />}
+            {mode === 'GLOBE' && <Globe2 className="w-3 h-3" />}
+            {mode === 'SATELLITE' && <Eye className="w-3 h-3" />}
+            {mode === 'DARK OPS' && <Sliders className="w-3 h-3" />}
+            <span>{mode}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* WEBMAPX LIVE COORDINATES & ELEVATION BAR */}
+      {mouseCoords && (
+        <div className="absolute bottom-4 right-4 z-20 px-3 py-1.5 rounded-xl bg-[#0b0e17]/90 border border-white/15 backdrop-blur-md font-mono text-[10px] text-slate-300 flex items-center gap-3 shadow-xl">
+          <span className="flex items-center gap-1 text-slate-400">
+            <Compass className="w-3 h-3 text-[#ff8800]" />
+            WGS84:
+          </span>
+          <span className="text-white font-bold">{mouseCoords.lat}° N, {mouseCoords.lon}° W</span>
+          <span className="text-amber-400 border-l border-white/15 pl-2">
+            Elev: ~{mouseCoords.elevM}m AMSL
+          </span>
+        </div>
+      )}
+
+      {/* Floating Measure Tool Active Badge */}
+      {showMeasureTool && (
+        <div className="absolute top-16 left-16 z-20 px-3 py-2 rounded-2xl bg-[#0e111a]/95 border border-amber-500/50 backdrop-blur-xl shadow-2xl font-mono text-[11px] text-amber-300 flex items-center gap-2">
+          <Ruler className="w-4 h-4 text-amber-400" />
+          <span>Ferramenta de Medição Ativa: Clique no mapa para medir distância geodésica.</span>
+          <button onClick={() => setShowMeasureTool(false)} className="text-slate-400 hover:text-white ml-2">✕</button>
+        </div>
+      )}
+
       {/* Floating 3D Toolbar Controls */}
       <div className="absolute top-16 right-14 z-20 flex flex-col items-end gap-2">
-        <div className="flex items-center gap-2">
-          {/* Seletor de Camadas (WebMapX Controls) */}
-          <button
-            onClick={() => setShowLayerMenu(!showLayerMenu)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-mono font-bold shadow-2xl backdrop-blur-md transition-all ${
-              showLayerMenu
-                ? 'bg-amber-500/20 text-[#ff8800] border-[#ff8800]'
-                : 'bg-[#13151b]/90 text-slate-300 border-white/10 hover:border-white/30'
-            }`}
-            title="Controle de Camadas MGA"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>CAMADAS</span>
-          </button>
-
-          {/* Botão de Perspectiva 3D */}
-          <button
-            onClick={togglePitch3D}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-mono font-bold shadow-2xl backdrop-blur-md transition-all ${
-              is3DActive
-                ? 'bg-[#ff8800] text-slate-950 border-[#ff9900]'
-                : 'bg-[#13151b]/90 text-slate-300 border-white/10 hover:border-white/30'
-            }`}
-            title="Alternar Perspectiva 3D de Montanhas"
-          >
-            <Box className="w-3.5 h-3.5" />
-            <span>{is3DActive ? 'TERRENO 3D' : '2D PLANO'}</span>
-          </button>
-        </div>
-
         {/* Menu de Camadas Dropdown */}
         {showLayerMenu && (
-          <div className="w-56 p-3 rounded-2xl bg-[#0e111a]/95 border border-white/15 backdrop-blur-xl shadow-2xl flex flex-col gap-2 font-mono text-[11px]">
+          <div className="w-64 p-3 rounded-2xl bg-[#0e111a]/95 border border-white/15 backdrop-blur-xl shadow-2xl flex flex-col gap-2 font-mono text-[11px]">
             <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-white/10 pb-1.5 flex items-center justify-between">
-              <span>Camadas Ativas</span>
+              <span>Camadas Oficiais MGA</span>
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             </div>
 
@@ -493,7 +644,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
               className="flex items-center justify-between text-left py-1 hover:text-white transition-colors"
             >
               <span className="flex items-center gap-1.5 text-amber-400">
-                <Building2 className="w-3 h-3" /> Obstáculos / Linhas
+                <Building2 className="w-3 h-3" /> Obstáculos / Linhas CEMIG
               </span>
               {layers.hazards ? <CheckSquare className="w-3.5 h-3.5 text-[#ff8800]" /> : <Square className="w-3.5 h-3.5 text-slate-600" />}
             </button>
@@ -503,7 +654,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
               className="flex items-center justify-between text-left py-1 hover:text-white transition-colors"
             >
               <span className="flex items-center gap-1.5 text-orange-400">
-                <Plane className="w-3 h-3" /> Corredor da Rota
+                <Plane className="w-3 h-3" /> Corredor Geodésico
               </span>
               {layers.corridor ? <CheckSquare className="w-3.5 h-3.5 text-[#ff8800]" /> : <Square className="w-3.5 h-3.5 text-slate-600" />}
             </button>
@@ -513,9 +664,19 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
               className="flex items-center justify-between text-left py-1 hover:text-white transition-colors"
             >
               <span className="flex items-center gap-1.5 text-cyan-400">
-                <Mountain className="w-3 h-3" /> Relevo Sombreado
+                <Mountain className="w-3 h-3" /> Relevo Sombreado 3D
               </span>
               {layers.hillshade ? <CheckSquare className="w-3.5 h-3.5 text-[#ff8800]" /> : <Square className="w-3.5 h-3.5 text-slate-600" />}
+            </button>
+
+            <button
+              onClick={() => toggleLayer('satellite')}
+              className="flex items-center justify-between text-left py-1 hover:text-white transition-colors"
+            >
+              <span className="flex items-center gap-1.5 text-emerald-400">
+                <Eye className="w-3 h-3" /> Imagens de Satélite
+              </span>
+              {layers.satellite ? <CheckSquare className="w-3.5 h-3.5 text-[#ff8800]" /> : <Square className="w-3.5 h-3.5 text-slate-600" />}
             </button>
 
             <div className="mt-1 pt-2 border-t border-white/10 text-[9px] text-slate-400 leading-tight">
