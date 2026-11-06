@@ -75,7 +75,7 @@ export const MgaNavbar: React.FC<MgaNavbarProps> = ({
           </div>
 
           {/* Navegação Principal dos Módulos */}
-          <nav className="hidden lg:flex items-center space-x-1">
+          <nav className="flex items-center space-x-1 overflow-x-auto py-1">
             {/* Experiência de Voo */}
             <div className="flex items-center bg-slate-900/60 p-1 rounded-md border border-slate-800/80">
               {MGA_MODULES.slice(0, 3).map(mod => {
