@@ -20,9 +20,12 @@ import {
   CheckCircle2,
   Filter,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Globe2,
+  Map
 } from 'lucide-react';
 import { InteractiveFlightMap } from './InteractiveFlightMap';
+import { MgaTerrainGlobeMap } from './MgaTerrainGlobeMap';
 import { Occurrence, HazardObstacle } from '@mega/types';
 
 export type RiskCategoryFilter = 'ALL' | 'OBSTACLES' | 'WEATHER' | 'CONTROL_LOSS' | 'RUNWAY_EXCURSION' | 'AIRSPACE';
@@ -238,6 +241,9 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<RiskCategoryFilter>('ALL');
   const [corridorBufferKm, setCorridorBufferKm] = useState<number>(40);
   const [showRightCard, setShowRightCard] = useState(true);
+  
+  // Alternância segura entre o motor 3D WebMapX/MapLibre e o Leaflet tático clássico
+  const [mapEngine, setMapEngine] = useState<'WEBMAPX_3D' | 'LEAFLET_2D'>('WEBMAPX_3D');
 
   const filteredCases = cases.filter(c => {
     const matchesCategory = categoryFilter === 'ALL' || c.category === categoryFilter;
@@ -255,40 +261,88 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
   return (
     <div className="relative w-full h-[calc(100vh-3.5rem)] bg-[#040415] text-[#e5e7eb] font-mono overflow-hidden select-none">
       
-      {/* MAPA DE FUNDO INTERATIVO COM SATELLITE TILES DARK E PONTOS DE PERIGO DOCUMENTADOS */}
+      {/* MOTOR CARTOGRÁFICO: WEBMAPX 3D TERRAIN OU LEAFLET CLASSIC (PRESERVA AMBOS) */}
       <div className="absolute inset-0 z-0 bg-[#070b14]">
-        <InteractiveFlightMap
-          origin={{
-            icao: selectedCase?.originIcao || 'CAC',
-            name: selectedCase?.originCity || 'Cascavel',
-            lat: selectedCase?.originLat || -25.0003,
-            lon: selectedCase?.originLon || -53.5008
-          }}
-          destination={{
-            icao: selectedCase?.destIcao || 'GRU',
-            name: selectedCase?.destCity || 'Guarulhos',
-            lat: selectedCase?.destLat || -23.4356,
-            lon: selectedCase?.destLon || -46.4731
-          }}
-          corridorBufferKm={corridorBufferKm}
-          occurrences={occurrences || []}
-          hazards={hazards || []}
-          selectedOccurrence={null}
-          onSelectOccurrence={() => {}}
-          showCorridor={true}
-        />
+        {mapEngine === 'WEBMAPX_3D' ? (
+          <MgaTerrainGlobeMap
+            origin={{
+              icao: selectedCase?.originIcao || 'CAC',
+              name: selectedCase?.originCity || 'Cascavel',
+              lat: selectedCase?.originLat || -25.0003,
+              lon: selectedCase?.originLon || -53.5008
+            }}
+            destination={{
+              icao: selectedCase?.destIcao || 'GRU',
+              name: selectedCase?.destCity || 'Guarulhos',
+              lat: selectedCase?.destLat || -23.4356,
+              lon: selectedCase?.destLon || -46.4731
+            }}
+            corridorBufferKm={corridorBufferKm}
+            occurrences={occurrences || []}
+            hazards={hazards || []}
+            selectedOccurrence={null}
+            onSelectOccurrence={() => {}}
+          />
+        ) : (
+          <InteractiveFlightMap
+            origin={{
+              icao: selectedCase?.originIcao || 'CAC',
+              name: selectedCase?.originCity || 'Cascavel',
+              lat: selectedCase?.originLat || -25.0003,
+              lon: selectedCase?.originLon || -53.5008
+            }}
+            destination={{
+              icao: selectedCase?.destIcao || 'GRU',
+              name: selectedCase?.destCity || 'Guarulhos',
+              lat: selectedCase?.destLat || -23.4356,
+              lon: selectedCase?.destLon || -46.4731
+            }}
+            corridorBufferKm={corridorBufferKm}
+            occurrences={occurrences || []}
+            hazards={hazards || []}
+            selectedOccurrence={null}
+            onSelectOccurrence={() => {}}
+            showCorridor={true}
+          />
+        )}
       </div>
 
-      {/* BANNER SUPERIOR DE AVISO: "ANTES DO PRÓXIMO VOO, CONHEÇA O TERRITÓRIO" */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+      {/* BANNER SUPERIOR DE AVISO & SELETOR DE MOTOR CARTOGRÁFICO */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
         <div className="bg-[#0b0e17]/95 border border-[#ff8800]/40 backdrop-blur-xl px-5 py-2 rounded-full shadow-2xl flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-[#ff8800] animate-ping" />
           <span className="text-xs font-mono font-bold text-white tracking-wide">
             ANTES DO PRÓXIMO VOO, CONHEÇA O TERRITÓRIO
           </span>
           <span className="text-[11px] text-[#ff9900] font-mono border-l border-white/10 pl-3">
-            Inteligência Geográfica Preventiva & Memória Oficial (CENIPA / NTSB)
+            Inteligência Geográfica Preventiva & Memória Oficial
           </span>
+        </div>
+
+        {/* Toggle de Motor Cartográfico (WebMapX 3D vs Leaflet) */}
+        <div className="bg-[#0c101a]/95 border border-white/10 rounded-full p-1 flex items-center gap-1 shadow-2xl backdrop-blur-xl">
+          <button
+            onClick={() => setMapEngine('WEBMAPX_3D')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+              mapEngine === 'WEBMAPX_3D'
+                ? 'bg-[#ff8800] text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Globe2 className="w-3 h-3" />
+            <span>WebMapX 3D</span>
+          </button>
+          <button
+            onClick={() => setMapEngine('LEAFLET_2D')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+              mapEngine === 'LEAFLET_2D'
+                ? 'bg-[#ff8800] text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Map className="w-3 h-3" />
+            <span>2D Clássico</span>
+          </button>
         </div>
       </div>
 

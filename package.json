@@ -13,6 +13,7 @@
     "test": "pnpm --filter \"@mega/*\" test"
   },
   "devDependencies": {
+    "puppeteer": "^25.16.0",
     "typescript": "^5.4.5",
     "vitest": "^5.1.0"
   }

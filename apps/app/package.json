@@ -9,6 +9,7 @@
     "preview": "vite preview --port 3001"
   },
   "dependencies": {
+    "@edugis-org/webmapx": "^0.2.15",
     "@mega/geospatial": "workspace:*",
     "@mega/shared": "workspace:*",
     "@mega/types": "workspace:*",
@@ -16,6 +17,7 @@
     "@types/leaflet": "^1.9.22",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.16.0",
+    "maplibre-gl": "^6.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^5.0.0"
