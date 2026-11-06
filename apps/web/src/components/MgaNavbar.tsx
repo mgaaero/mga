@@ -1,17 +1,11 @@
 import React from 'react';
 import { 
-  Compass, 
-  Map, 
-  Clock, 
-  AlertTriangle, 
-  ShieldAlert, 
-  BrainCircuit, 
-  Building2, 
-  FileText, 
-  ShieldCheck,
-  PlaneTakeoff,
+  Plane, 
   ArrowRight,
-  ExternalLink
+  Compass,
+  Layers,
+  ShieldCheck,
+  Menu
 } from 'lucide-react';
 
 export type MgaModuleId = 
@@ -40,49 +34,76 @@ export const MgaNavbar: React.FC<MgaNavbarProps> = ({
   onEnterApp
 }) => {
   return (
-    <header className="bg-[#0b0f17] border-b border-slate-800 text-slate-200 sticky top-0 z-50 select-none">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
+    <header className="bg-[#dce0e6]/90 backdrop-blur-md border-b border-white/60 sticky top-0 z-50 select-none transition-all">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           
-          {/* Logo & Identidade Oficial MGA */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onSelectModule('home')}>
-            <div className="w-8 h-8 rounded bg-amber-500/10 border border-amber-500/40 flex items-center justify-center">
-              <span className="font-mono font-bold text-amber-500 text-sm tracking-wider">MGA</span>
+          {/* Logo Minimalista Luxuoso com Ícone de Asa */}
+          <div 
+            className="flex items-center space-x-2.5 cursor-pointer group" 
+            onClick={() => onSelectModule('home')}
+          >
+            <div className="w-8 h-8 rounded-full bg-[#111625] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <Plane className="w-4 h-4 text-white -rotate-45" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-white tracking-wider text-sm">MGA</span>
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                  Aviation Intelligence
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 leading-none">Memória Geográfica da Aviação</p>
+            <div className="flex items-baseline space-x-1">
+              <span className="font-extrabold text-[#0f172a] text-lg tracking-tight">MGA</span>
+              <span className="text-[10px] font-bold text-[#ff8800] uppercase tracking-wider">Aero</span>
             </div>
           </div>
 
-          {/* Botões de Ação Institucional & Acesso */}
-          <div className="flex items-center space-x-3">
-            <div className="hidden sm:flex items-center space-x-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>5.004 AERÓDROMOS WGS84</span>
-            </div>
-
-            <button
-              onClick={onOpenAdmin}
-              className="text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/80 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors"
+          {/* Navegação Central Estilo Editorial */}
+          <nav className="hidden md:flex items-center space-x-6 text-xs font-semibold text-[#475569]">
+            <button 
+              onClick={() => onSelectModule('home')}
+              className={`transition-colors hover:text-[#0f172a] cursor-pointer ${activeModule === 'home' ? 'text-[#0f172a] font-bold' : ''}`}
             >
-              Auditoria & ADM
+              Início
+            </button>
+            <button 
+              onClick={() => onEnterApp?.()}
+              className="transition-colors hover:text-[#0f172a] cursor-pointer"
+            >
+              Rotas & Corredores
+            </button>
+            <button 
+              onClick={() => onEnterApp?.()}
+              className="transition-colors hover:text-[#0f172a] cursor-pointer flex items-center gap-1.5"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ff8800]" />
+              <span>Mapa 3D WebMapX</span>
+            </button>
+            <button 
+              onClick={() => onEnterApp?.()}
+              className="transition-colors hover:text-[#0f172a] cursor-pointer"
+            >
+              Investigações CENIPA
+            </button>
+            <button 
+              onClick={onOpenAdmin}
+              className="transition-colors hover:text-[#0f172a] cursor-pointer text-slate-500"
+            >
+              Admin ADM
+            </button>
+          </nav>
+
+          {/* Botões do Topo Direito (Menu & Get Ticket/Access) */}
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => onEnterApp?.()}
+              className="hidden sm:inline-flex items-center space-x-1.5 text-xs font-semibold text-[#334155] px-3 py-1.5 rounded-full hover:bg-white/60 transition-colors cursor-pointer"
+            >
+              <Menu className="w-4 h-4" />
+              <span>Menu</span>
             </button>
 
-            {onEnterApp && (
-              <button
-                onClick={onEnterApp}
-                className="text-xs font-bold font-mono text-slate-950 bg-[#ff8800] hover:bg-[#ff9900] px-3.5 py-1.5 rounded-lg shadow-lg transition-all flex items-center gap-1.5"
-              >
-                <span>ACESSAR PLATAFORMA</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
+            <button
+              onClick={() => onEnterApp?.()}
+              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#0f172a] text-xs font-bold tracking-wide shadow-sm border border-slate-200/80 transition-all hover:shadow hover:scale-[1.02] flex items-center space-x-1.5 cursor-pointer"
+            >
+              <span>Entrar no Cockpit</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#ff8800]" />
+            </button>
           </div>
 
         </div>
