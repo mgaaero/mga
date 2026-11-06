@@ -28,6 +28,7 @@ import { IntelligenceAiBriefing } from './components/IntelligenceAiBriefing';
 import { MgaNavbar, MgaModuleId } from './components/MgaNavbar';
 import { MgaHome } from './components/MgaHome';
 import { MgaMemoryView } from './components/MgaMemoryView';
+import { MgaHazardsView } from './components/MgaHazardsView';
 import { MgaMapControls, MapLayerConfig } from './components/MgaMapControls';
 import { SupabaseRouteService } from './services/supabase-route-service';
 import { Airport } from '@mega/types';
@@ -40,6 +41,7 @@ export default function App() {
   const [corridorBuffer, setCorridorBuffer] = useState(60); // km
   const [activeTab, setActiveTab] = useState<'map' | 'occurrences' | 'hazards' | 'profile' | 'ai' | 'report'>('map');
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(HISTORICAL_OCCURRENCES_SEED[0]);
+  const [selectedHazard, setSelectedHazard] = useState<HazardObstacle | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -633,46 +635,13 @@ export default function App() {
               />
             )}
 
+            {/* Módulo 06: MGA Hazards — Obstáculos e Perigos Físicos */}
             {activeTab === 'hazards' && (
-              <div className="p-6 max-w-5xl space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-lg text-white">Obstáculos e Perigos Ativos</h3>
-                    <p className="text-xs text-slate-400">
-                      Linhas de transmissão, torres, antenas e obstáculos do território.
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono text-orange-400 bg-orange-950 px-3 py-1 rounded-md border border-orange-800">
-                    {HAZARDS_SEED.length} perigos mapeados
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {HAZARDS_SEED.map(haz => (
-                    <div key={haz.id} className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-orange-500/20 text-orange-400 border-orange-500/40">
-                              {haz.type}
-                            </span>
-                            <span className="text-xs font-mono text-slate-400">Verificado em: {haz.verifiedAt}</span>
-                          </div>
-                          <h4 className="font-bold text-sm text-white">{haz.description}</h4>
-                          <div className="flex items-center space-x-4 text-xs text-slate-400 mt-2 font-mono">
-                            {haz.heightAglFt && <span>Altura Solo: {haz.heightAglFt} ft AGL</span>}
-                            {haz.heightAmslFt && <span>Altitude: {haz.heightAmslFt} ft AMSL</span>}
-                            <span>Fonte: {haz.sourceAgency}</span>
-                          </div>
-                        </div>
-                        <span className="text-xs font-mono text-slate-400">
-                          Lat: {haz.coordinates.latitude.toFixed(4)}, Lon: {haz.coordinates.longitude.toFixed(4)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <MgaHazardsView
+                hazards={liveHazards.length > 0 ? liveHazards : HAZARDS_SEED}
+                selectedHazard={selectedHazard}
+                onSelectHazard={setSelectedHazard}
+              />
             )}
 
             {activeTab === 'report' && (
