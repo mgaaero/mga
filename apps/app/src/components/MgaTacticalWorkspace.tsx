@@ -63,8 +63,8 @@ export interface RouteRiskAssessment {
 export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
   {
     id: 'voepass-ps-vpb',
-    code: 'A-102/CENIPA/2024',
-    reportNumber: 'A-102/CENIPA/2024',
+    code: 'A-116/CENIPA/2024',
+    reportNumber: 'A-116/CENIPA/2024',
     aircraftModel: 'ATR 72-500',
     registration: 'PS-VPB',
     category: 'WEATHER',
@@ -73,7 +73,7 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     originCity: 'Cascavel',
     destIcao: 'GRU',
     destCity: 'Guarulhos',
-    date: '09/08/2024 (Relatório: 15/07/2026)',
+    date: '09/08/2024',
     severity: 'CATASTROPHIC',
     fatalitiesOnboard: 62,
     fatalitiesGround: 0,
@@ -82,7 +82,7 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     terrainObstacleWarning: 'Zona de formação frequente de gelo severo em camada terminal sobre relevo do planalto paulista.',
     officialSource: 'CENIPA / Força Aérea Brasileira',
     officialReportUrl: 'https://dedalo.aer.mil.br/',
-    investigationStatus: 'FINAL_REPORT_CONFIRMED',
+    investigationStatus: 'PRELIMINARY_ACTIVE',
     aircraftImage: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
     elevationAmsl: 740,
     hazardsNearbyCount: 3,
@@ -232,14 +232,13 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
   occurrences,
   hazards
 }) => {
-  const [cases, setCases] = useState<RouteRiskAssessment[]>(DOCUMENTED_ROUTE_CASES);
+  const [cases] = useState<RouteRiskAssessment[]>(DOCUMENTED_ROUTE_CASES);
   const [selectedCase, setSelectedCase] = useState<RouteRiskAssessment>(DOCUMENTED_ROUTE_CASES[0]);
   const [searchFilter, setSearchFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<RiskCategoryFilter>('ALL');
   const [corridorBufferKm, setCorridorBufferKm] = useState<number>(40);
   const [showRightCard, setShowRightCard] = useState(true);
 
-  // Filtro combinado de busca textual e categoria de risco
   const filteredCases = cases.filter(c => {
     const matchesCategory = categoryFilter === 'ALL' || c.category === categoryFilter;
     const matchesSearch = 
@@ -254,26 +253,26 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
   });
 
   return (
-    <div className="relative w-full h-[calc(100vh-3.5rem)] bg-[#040415] text-[#e5e7eb] font-['JetBrains_Mono',monospace] overflow-hidden select-none">
+    <div className="relative w-full h-[calc(100vh-3.5rem)] bg-[#040415] text-[#e5e7eb] font-mono overflow-hidden select-none">
       
       {/* MAPA DE FUNDO INTERATIVO COM SATELLITE TILES DARK E PONTOS DE PERIGO DOCUMENTADOS */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-[#070b14]">
         <InteractiveFlightMap
           origin={{
-            icao: selectedCase.originIcao,
-            name: selectedCase.originCity,
-            lat: selectedCase.originLat,
-            lon: selectedCase.originLon
+            icao: selectedCase?.originIcao || 'CAC',
+            name: selectedCase?.originCity || 'Cascavel',
+            lat: selectedCase?.originLat || -25.0003,
+            lon: selectedCase?.originLon || -53.5008
           }}
           destination={{
-            icao: selectedCase.destIcao,
-            name: selectedCase.destCity,
-            lat: selectedCase.destLat,
-            lon: selectedCase.destLon
+            icao: selectedCase?.destIcao || 'GRU',
+            name: selectedCase?.destCity || 'Guarulhos',
+            lat: selectedCase?.destLat || -23.4356,
+            lon: selectedCase?.destLon || -46.4731
           }}
           corridorBufferKm={corridorBufferKm}
-          occurrences={occurrences}
-          hazards={hazards}
+          occurrences={occurrences || []}
+          hazards={hazards || []}
           selectedOccurrence={null}
           onSelectOccurrence={() => {}}
           showCorridor={true}

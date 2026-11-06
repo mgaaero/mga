@@ -13,7 +13,14 @@ import { HISTORICAL_OCCURRENCES_SEED, HAZARDS_SEED, AIRPORTS_DATABASE } from '@m
 import { Occurrence, HazardObstacle } from '@mega/types';
 
 export default function App() {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<any>(() => {
+    // Verifica flag persistida de sessão rápida de homologação
+    try {
+      const demoStored = localStorage.getItem('mga_demo_session');
+      if (demoStored === 'true') return { user: { email: 'cmte.homologacao@mga.aero' } };
+    } catch {}
+    return null;
+  });
   const [isDemo, setIsDemo] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [activeModule, setActiveModule] = useState<MgaModuleId>('home');
@@ -23,10 +30,10 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
 
-    // Timeout de escape: nunca trava em tela preta
+    // Timeout de escape rápido
     const fallbackTimer = setTimeout(() => {
       if (isMounted) setLoadingAuth(false);
-    }, 600);
+    }, 400);
 
     try {
       supabase.auth.getSession().then(({ data }) => {
@@ -39,7 +46,12 @@ export default function App() {
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-        if (isMounted) setSession(newSession);
+        if (isMounted) {
+          setSession(newSession);
+          if (!newSession) {
+            localStorage.removeItem('mga_demo_session');
+          }
+        }
       });
 
       return () => {
@@ -56,11 +68,18 @@ export default function App() {
     try {
       await supabase.auth.signOut();
     } catch {}
+    localStorage.removeItem('mga_demo_session');
     setSession(null);
     setIsDemo(false);
   };
 
-  if (loadingAuth) {
+  const handleDemoAccess = () => {
+    localStorage.setItem('mga_demo_session', 'true');
+    setSession({ user: { email: 'cmte.homologacao@mga.aero' } });
+    setIsDemo(true);
+  };
+
+  if (loadingAuth && !session) {
     return (
       <div className="h-screen w-screen bg-[#070b12] flex flex-col items-center justify-center text-slate-300 font-mono text-xs">
         <div className="flex items-center gap-3 bg-[#0f1422] border border-white/10 px-5 py-3 rounded-2xl shadow-2xl">
@@ -77,12 +96,12 @@ export default function App() {
     return (
       <AuthScreen
         onAuthenticated={(user) => setSession({ user })}
-        onDemoAccess={() => setIsDemo(true)}
+        onDemoAccess={handleDemoAccess}
       />
     );
   }
 
-  const currentUserEmail = session?.user?.email || (isDemo ? 'demo.piloto@mga.aero' : undefined);
+  const currentUserEmail = session?.user?.email || (isDemo ? 'cmte.homologacao@mga.aero' : undefined);
 
   // Usuário autenticado: Acesso imediato ao MGA Map / Workspace Tático
   return (
