@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "pnpm --filter @mega/web dev",
     "dev:web": "pnpm --filter @mega/web dev",
+    "dev:app": "pnpm --filter @mega/app dev",
+    "dev:admin": "pnpm --filter @relou/admin dev",
+    "dev:all": "pnpm --parallel dev",
     "build": "pnpm --filter \"@mega/*\" build",
-    "lint": "pnpm --filter \"@mega/*\" lint",
     "test": "pnpm --filter \"@mega/*\" test"
   },
   "devDependencies": {
