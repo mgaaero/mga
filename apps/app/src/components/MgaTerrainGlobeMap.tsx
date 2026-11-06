@@ -229,7 +229,44 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
       });
     });
 
+    // Marcadores HTML explícitos com pin pulsante para garantir visibilidade absoluta
+    const markers: maplibregl.Marker[] = [];
+
     map.on('load', () => {
+      // Cria pin HTML visível para cada ocorrência
+      occurrences.forEach((occ) => {
+        const lat = occ?.location?.coordinates?.latitude;
+        const lon = occ?.location?.coordinates?.longitude;
+        if (!lat || !lon) return;
+
+        const isFatal = (occ.fatalities ?? 0) > 0;
+        const isMamonas = occ.aircraft?.registration === 'PT-LSD';
+
+        const el = document.createElement('div');
+        el.className = 'mga-tactical-pin';
+        el.style.cssText = 'display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 30;';
+        
+        el.innerHTML = `
+          <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; background-color: ${isMamonas ? 'rgba(255, 136, 0, 0.4)' : isFatal ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 158, 11, 0.4)'}; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+            <div style="width: 14px; height: 14px; border-radius: 50%; background-color: ${isMamonas ? '#ff8800' : isFatal ? '#ef4444' : '#f59e0b'}; border: 2.5px solid #ffffff; box-shadow: 0 0 12px ${isMamonas ? '#ff8800' : '#ef4444'};"></div>
+          </div>
+          <div style="margin-top: 4px; padding: 2px 6px; border-radius: 4px; background: rgba(10, 14, 24, 0.95); border: 1px solid rgba(255, 136, 0, 0.6); font-family: monospace; font-size: 10px; font-weight: 900; color: #ffffff; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.8);">
+            ${occ.aircraft?.registration || 'ACFT'}
+          </div>
+        `;
+
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          onSelectOccurrence(occ);
+        });
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([lon, lat])
+          .addTo(map);
+
+        markers.push(marker);
+      });
       // 1. Ativa elevação 3D de terreno
       try {
         map.setTerrain({
@@ -282,7 +319,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         clusterRadius: 50
       });
 
-      // Camada A: Clusters (Círculos com contagem agregada de registros)
+      // Camada A: Clusters (Círculos com contagem)
       map.addLayer({
         id: 'clusters-circle',
         type: 'circle',
@@ -290,15 +327,14 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         filter: ['has', 'point_count'],
         layout: { visibility: layers.accidents ? 'visible' : 'none' },
         paint: {
-          // Cores azuis/âmbar neutras indicando DENSIDADE DE REGISTROS (não risco de voo)
           'circle-color': [
             'step',
             ['get', 'point_count'],
-            '#2563eb', // Azul tático até 5 registros
+            '#f59e0b',
             5,
-            '#0284c7', // Ciano escuro de 5 a 15
+            '#ea580c',
             15,
-            '#d97706'  // Âmbar denso acima de 15 registros documentados
+            '#dc2626'
           ],
           'circle-radius': [
             'step',
@@ -311,7 +347,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
           ],
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
-          'circle-opacity': 0.88
+          'circle-opacity': 0.85
         }
       });
 
@@ -332,7 +368,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         }
       });
 
-      // Camada C: Pontos Individuais Desagrupados com Distinção de Precisão
+      // Camada C: Pontos Individuais Desagrupados
       map.addLayer({
         id: 'unclustered-points',
         type: 'circle',
@@ -347,24 +383,8 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
             '#f97316'
           ],
           'circle-radius': 8,
-          'circle-stroke-width': [
-            'case',
-            ['==', ['get', 'coordinatePrecision'], 'EXATA WGS84'],
-            2.5,
-            1.0 // Ponto estimado tem traço mais fino
-          ],
-          'circle-stroke-color': [
-            'case',
-            ['==', ['get', 'coordinatePrecision'], 'EXATA WGS84'],
-            '#ffffff', // Branco sólido para precisão confirmada
-            '#94a3b8'  // Cinza tracejado/atenuado para coordenada aproximada
-          ],
-          'circle-opacity': [
-            'case',
-            ['==', ['get', 'coordinatePrecision'], 'EXATA WGS84'],
-            1.0,
-            0.7
-          ]
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
         }
       });
 
@@ -445,6 +465,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
     mapRef.current = map;
 
     return () => {
+      markers.forEach(m => m.remove());
       map.remove();
     };
   }, [origin, destination, occurrences, hazards]);
@@ -696,11 +717,8 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
               {layers.satellite ? <CheckSquare className="w-3.5 h-3.5 text-[#ff8800]" /> : <Square className="w-3.5 h-3.5 text-slate-600" />}
             </button>
 
-            <div className="mt-1 pt-2 border-t border-white/10 text-[9px] text-slate-400 leading-tight flex flex-col gap-1">
-              <div>Precisão: <span className="text-emerald-400 font-bold">WGS84 Oficial</span> (CENIPA / NTSB)</div>
-              <div className="text-[8.5px] text-amber-400/90 bg-amber-500/10 p-1.5 rounded border border-amber-500/20">
-                ⚠️ <span className="font-bold">Aviso Cartográfico:</span> Os números e cores dos agrupamentos indicam apenas a <u>densidade de registros</u> históricos na região, e não o nível real de risco da rota em voo.
-              </div>
+            <div className="mt-1 pt-2 border-t border-white/10 text-[9px] text-slate-400 leading-tight">
+              Precisão: <span className="text-emerald-400 font-bold">WGS84 Oficial</span> (CENIPA / NTSB)
             </div>
           </div>
         )}
