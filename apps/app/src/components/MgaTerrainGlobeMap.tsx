@@ -139,13 +139,21 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
       style: {
         version: 8,
         sources: {
-          'osm-dark': {
+          'osm-base': {
             type: 'raster',
             tiles: [
               'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
             ],
             tileSize: 256,
             attribution: '© OpenStreetMap contributors'
+          },
+          'carto-dark': {
+            type: 'raster',
+            tiles: [
+              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
+            ],
+            tileSize: 256,
+            attribution: '© CartoDB'
           },
           'satellite': {
             type: 'raster',
@@ -154,29 +162,15 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
             ],
             tileSize: 256,
             attribution: 'Esri, Maxar'
-          },
-          'terrain-dem': {
-            type: 'raster-dem',
-            tiles: [
-              'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
-            ],
-            encoding: 'terrarium',
-            tileSize: 256,
-            maxzoom: 15
           }
         },
         layers: [
           {
-            id: 'dark-base',
+            id: 'carto-base',
             type: 'raster',
-            source: 'osm-dark',
+            source: 'carto-dark',
             minzoom: 0,
-            maxzoom: 19,
-            paint: {
-              'raster-brightness-max': 0.35,
-              'raster-contrast': 0.25,
-              'raster-saturation': -0.85
-            }
+            maxzoom: 19
           },
           {
             id: 'satellite-base',
@@ -185,26 +179,14 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
             layout: { visibility: 'none' },
             minzoom: 0,
             maxzoom: 19
-          },
-          {
-            id: 'hillshade-layer',
-            type: 'hillshade',
-            source: 'terrain-dem',
-            layout: { visibility: 'visible' },
-            paint: {
-              'hillshade-shadow-color': '#03050a',
-              'hillshade-highlight-color': '#ff9900',
-              'hillshade-accent-color': '#00e5ff',
-              'hillshade-exaggeration': 0.75
-            }
           }
         ]
       },
       center: [origin?.lon ?? -46.4731, origin?.lat ?? -23.4356],
       zoom: 6,
-      pitch: 45,
-      bearing: -15,
-      maxPitch: 85
+      pitch: 0,
+      bearing: 0,
+      maxPitch: 60
     });
 
     // Control WebMapX: Zoom e Bússola
@@ -267,17 +249,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
 
         markers.push(marker);
       });
-      // 1. Ativa elevação 3D de terreno
-      try {
-        map.setTerrain({
-          source: 'terrain-dem',
-          exaggeration: 1.5
-        });
-      } catch (e) {
-        console.warn('Terrain note:', e);
-      }
-
-      // 2. Corredor Geodésico
+      // Corredor Geodésico
       map.addSource('route-corridor', {
         type: 'geojson',
         data: {
@@ -493,14 +465,11 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
     if (map.getLayer('route-line')) {
       map.setLayoutProperty('route-line', 'visibility', layers.corridor ? 'visible' : 'none');
     }
-    if (map.getLayer('hillshade-layer')) {
-      map.setLayoutProperty('hillshade-layer', 'visibility', layers.hillshade ? 'visible' : 'none');
-    }
     if (map.getLayer('satellite-base')) {
       map.setLayoutProperty('satellite-base', 'visibility', layers.satellite ? 'visible' : 'none');
     }
-    if (map.getLayer('dark-base')) {
-      map.setLayoutProperty('dark-base', 'visibility', layers.satellite ? 'none' : 'visible');
+    if (map.getLayer('carto-base')) {
+      map.setLayoutProperty('carto-base', 'visibility', layers.satellite ? 'none' : 'visible');
     }
   }, [layers]);
 
