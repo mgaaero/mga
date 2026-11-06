@@ -46,6 +46,7 @@ export default function App() {
   const [remoteError, setRemoteError] = useState<string | null>(null);
   const [isLiveSupabase, setIsLiveSupabase] = useState(false);
   const [liveOccurrences, setLiveOccurrences] = useState<Occurrence[]>([]);
+  const [liveHazards, setLiveHazards] = useState<HazardObstacle[]>([]);
   const [liveOriginAirport, setLiveOriginAirport] = useState<Airport | null>(null);
   const [liveDestAirport, setLiveDestAirport] = useState<Airport | null>(null);
 
@@ -138,16 +139,22 @@ export default function App() {
       setLiveOriginAirport(remoteOrig);
       setLiveDestAirport(remoteDest);
 
-      // 2. Executa a RPC PostGIS no Supabase
-      const results = await SupabaseRouteService.searchRouteMemory(
-        remoteOrig.latitude,
-        remoteOrig.longitude,
-        remoteDest.latitude,
-        remoteDest.longitude,
-        corridor
-      );
+      // 2. Executa a RPC PostGIS no Supabase e busca obstáculos reais
+      const [results, remoteHazards] = await Promise.all([
+        SupabaseRouteService.searchRouteMemory(
+          remoteOrig.latitude,
+          remoteOrig.longitude,
+          remoteDest.latitude,
+          remoteDest.longitude,
+          corridor
+        ),
+        SupabaseRouteService.fetchHazards()
+      ]);
 
       setLiveOccurrences(results);
+      if (remoteHazards.length > 0) {
+        setLiveHazards(remoteHazards);
+      }
       setIsLiveSupabase(true);
     } catch (err: any) {
       console.warn('Falha na consulta remota do Supabase:', err);
@@ -162,6 +169,7 @@ export default function App() {
   const routeAnalysis: RouteIntelligenceAnalysis = useMemo(() => {
     const baseAirports = [originAirport, destAirport];
     const occurrencesToUse = isLiveSupabase ? liveOccurrences : HISTORICAL_OCCURRENCES_SEED;
+    const hazardsToUse = isLiveSupabase && liveHazards.length > 0 ? liveHazards : HAZARDS_SEED;
 
     try {
       return RouteIntelligenceService.analyzeRoute(
@@ -173,7 +181,7 @@ export default function App() {
         },
         baseAirports,
         occurrencesToUse,
-        HAZARDS_SEED
+        hazardsToUse
       );
     } catch {
       return RouteIntelligenceService.analyzeRoute(

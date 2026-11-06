@@ -129,4 +129,46 @@ export class SupabaseRouteService {
       throw err;
     }
   }
+
+  /**
+   * Consulta os obstáculos reais registrados no Supabase
+   */
+  static async fetchHazards(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('hazards')
+        .select('*')
+        .eq('status', 'ACTIVE_EXISTING');
+
+      if (error || !data) return [];
+
+      return data.map((h: any) => {
+        let lat = 0;
+        let lon = 0;
+        if (h.coordinates && h.coordinates.coordinates) {
+          lon = h.coordinates.coordinates[0];
+          lat = h.coordinates.coordinates[1];
+        }
+
+        return {
+          id: h.id,
+          type: h.hazard_type,
+          status: h.status,
+          description: h.description,
+          coordinates: {
+            latitude: lat,
+            longitude: lon,
+            elevationFt: h.height_amsl_ft || 0
+          },
+          heightAglFt: h.height_agl_ft,
+          heightAmslFt: h.height_amsl_ft,
+          sourceAgency: h.source_hazard_id || 'DECEA / AIS',
+          verifiedAt: h.created_at
+        };
+      });
+    } catch (err) {
+      console.error('Falha ao buscar obstáculos reais no Supabase:', err);
+      return [];
+    }
+  }
 }
