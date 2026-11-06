@@ -35,13 +35,23 @@ describe('E2E Live Supabase Integration Tests', () => {
     expect(resultsCaratinga[0].aircraft?.registration).toBe('PT-ONJ');
     expect(resultsCaratinga[0].source.recordIdentifier).toBe('A-145/CENIPA/2021');
 
-    // Rota sem acidentes na base remota
-    const resultsEmpty = await SupabaseRouteService.searchRouteMemory(
+    // SBGR -> SBRJ com corredor de 60km inclui Congonhas (dist_to_route_km = 28.2 km)
+    const resultsPonteAerea60km = await SupabaseRouteService.searchRouteMemory(
       -23.435556, -46.473056, // SBGR
       -22.910556, -43.163056, // SBRJ
       60.0
     );
-    expect(Array.isArray(resultsEmpty)).toBe(true);
-    expect(resultsEmpty.length).toBe(0);
+    expect(Array.isArray(resultsPonteAerea60km)).toBe(true);
+    expect(resultsPonteAerea60km.length).toBe(1);
+    expect(resultsPonteAerea60km[0].aircraft?.registration).toBe('PR-MBK');
+
+    // SBGR -> SBRJ com corredor estreito de 20km NÃO inclui Congonhas (fica fora do corredor)
+    const resultsPonteAerea20km = await SupabaseRouteService.searchRouteMemory(
+      -23.435556, -46.473056, // SBGR
+      -22.910556, -43.163056, // SBRJ
+      20.0
+    );
+    expect(Array.isArray(resultsPonteAerea20km)).toBe(true);
+    expect(resultsPonteAerea20km.length).toBe(0);
   });
 });
