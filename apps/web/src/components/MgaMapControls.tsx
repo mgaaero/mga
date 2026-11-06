@@ -158,3 +158,4 @@ export const MgaMapControls: React.FC<MgaMapControlsProps> = ({
     </div>
   );
 };
+

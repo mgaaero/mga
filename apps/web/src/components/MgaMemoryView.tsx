@@ -268,3 +268,4 @@ export const MgaMemoryView: React.FC<MgaMemoryViewProps> = ({
     </div>
   );
 };
+
