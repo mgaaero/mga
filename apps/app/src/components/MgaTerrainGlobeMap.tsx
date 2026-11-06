@@ -282,7 +282,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         clusterRadius: 50
       });
 
-      // Camada A: Clusters (Círculos com contagem)
+      // Camada A: Clusters (Círculos com contagem agregada de registros)
       map.addLayer({
         id: 'clusters-circle',
         type: 'circle',
@@ -290,14 +290,15 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         filter: ['has', 'point_count'],
         layout: { visibility: layers.accidents ? 'visible' : 'none' },
         paint: {
+          // Cores azuis/âmbar neutras indicando DENSIDADE DE REGISTROS (não risco de voo)
           'circle-color': [
             'step',
             ['get', 'point_count'],
-            '#f59e0b',
+            '#2563eb', // Azul tático até 5 registros
             5,
-            '#ea580c',
+            '#0284c7', // Ciano escuro de 5 a 15
             15,
-            '#dc2626'
+            '#d97706'  // Âmbar denso acima de 15 registros documentados
           ],
           'circle-radius': [
             'step',
@@ -310,7 +311,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
           ],
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
-          'circle-opacity': 0.85
+          'circle-opacity': 0.88
         }
       });
 
@@ -331,7 +332,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
         }
       });
 
-      // Camada C: Pontos Individuais Desagrupados
+      // Camada C: Pontos Individuais Desagrupados com Distinção de Precisão
       map.addLayer({
         id: 'unclustered-points',
         type: 'circle',
@@ -346,8 +347,24 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
             '#f97316'
           ],
           'circle-radius': 8,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
+          'circle-stroke-width': [
+            'case',
+            ['==', ['get', 'coordinatePrecision'], 'EXATA WGS84'],
+            2.5,
+            1.0 // Ponto estimado tem traço mais fino
+          ],
+          'circle-stroke-color': [
+            'case',
+            ['==', ['get', 'coordinatePrecision'], 'EXATA WGS84'],
+            '#ffffff', // Branco sólido para precisão confirmada
+            '#94a3b8'  // Cinza tracejado/atenuado para coordenada aproximada
+          ],
+          'circle-opacity': [
+            'case',
+            ['==', ['get', 'coordinatePrecision'], 'EXATA WGS84'],
+            1.0,
+            0.7
+          ]
         }
       });
 
@@ -679,8 +696,11 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
               {layers.satellite ? <CheckSquare className="w-3.5 h-3.5 text-[#ff8800]" /> : <Square className="w-3.5 h-3.5 text-slate-600" />}
             </button>
 
-            <div className="mt-1 pt-2 border-t border-white/10 text-[9px] text-slate-400 leading-tight">
-              Precisão: <span className="text-emerald-400 font-bold">WGS84 Oficial</span> (CENIPA / NTSB)
+            <div className="mt-1 pt-2 border-t border-white/10 text-[9px] text-slate-400 leading-tight flex flex-col gap-1">
+              <div>Precisão: <span className="text-emerald-400 font-bold">WGS84 Oficial</span> (CENIPA / NTSB)</div>
+              <div className="text-[8.5px] text-amber-400/90 bg-amber-500/10 p-1.5 rounded border border-amber-500/20">
+                ⚠️ <span className="font-bold">Aviso Cartográfico:</span> Os números e cores dos agrupamentos indicam apenas a <u>densidade de registros</u> históricos na região, e não o nível real de risco da rota em voo.
+              </div>
             </div>
           </div>
         )}
