@@ -17,10 +17,15 @@ import {
   Radio,
   ExternalLink,
   Info,
-  CheckCircle2
+  CheckCircle2,
+  Filter,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 import { InteractiveFlightMap } from './InteractiveFlightMap';
 import { Occurrence, HazardObstacle } from '@mega/types';
+
+export type RiskCategoryFilter = 'ALL' | 'OBSTACLES' | 'WEATHER' | 'CONTROL_LOSS' | 'RUNWAY_EXCURSION' | 'AIRSPACE';
 
 export interface RouteRiskAssessment {
   id: string;
@@ -28,6 +33,8 @@ export interface RouteRiskAssessment {
   reportNumber: string;
   aircraftModel: string;
   registration: string;
+  category: 'OBSTACLES' | 'WEATHER' | 'CONTROL_LOSS' | 'RUNWAY_EXCURSION' | 'AIRSPACE';
+  categoryLabel: string;
   originIcao: string;
   originCity: string;
   destIcao: string;
@@ -40,7 +47,7 @@ export interface RouteRiskAssessment {
   distanceToCorridorKm: number;
   terrainObstacleWarning: string;
   officialSource: string;
-  officialReportUrl?: string;
+  officialReportUrl: string;
   investigationStatus: string;
   aircraftImage: string;
   elevationAmsl: number;
@@ -60,6 +67,8 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     reportNumber: 'A-102/CENIPA/2024',
     aircraftModel: 'ATR 72-500',
     registration: 'PS-VPB',
+    category: 'WEATHER',
+    categoryLabel: 'Gelo Severo / Meteorologia',
     originIcao: 'CAC',
     originCity: 'Cascavel',
     destIcao: 'GRU',
@@ -68,10 +77,11 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     severity: 'CATASTROPHIC',
     fatalitiesOnboard: 62,
     fatalitiesGround: 0,
-    causalFactor: 'Gelo severo em voo (Icing conditions), perda de sustentação e parafuso chato em Vinhedo/SP.',
+    causalFactor: 'Gelo severo em voo (Icing conditions), degradação aerodinâmica, perda de sustentação e parafuso chato em Vinhedo/SP.',
     distanceToCorridorKm: 4.8,
-    terrainObstacleWarning: 'Zona de formação de gelo severo em camada terminal e relevo ondulado no planalto paulista.',
+    terrainObstacleWarning: 'Zona de formação frequente de gelo severo em camada terminal sobre relevo do planalto paulista.',
     officialSource: 'CENIPA / Força Aérea Brasileira',
+    officialReportUrl: 'https://dedalo.aer.mil.br/',
     investigationStatus: 'FINAL_REPORT_CONFIRMED',
     aircraftImage: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
     elevationAmsl: 740,
@@ -89,6 +99,8 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     reportNumber: 'A-145/CENIPA/2021',
     aircraftModel: 'Beechcraft King Air C90A',
     registration: 'PT-ONJ',
+    category: 'OBSTACLES',
+    categoryLabel: 'Colisão com Obstáculo / Linha de Alta Tensão',
     originIcao: 'GOI',
     originCity: 'Goiânia',
     destIcao: 'SNCT',
@@ -97,10 +109,11 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     severity: 'CATASTROPHIC',
     fatalitiesOnboard: 5,
     fatalitiesGround: 0,
-    causalFactor: 'Colisão com cabo para-raios de linha de transmissão (CEMIG 69kV) na aproximação final.',
+    causalFactor: 'Colisão com cabo para-raios de linha de transmissão (CEMIG 69kV) na aproximação final abaixo da rampa ideal.',
     distanceToCorridorKm: 1.2,
-    terrainObstacleWarning: 'ALERTA CRÍTICO: Linha de transmissão não sinalizada fora da zona de proteção oficial do aeródromo.',
+    terrainObstacleWarning: 'ALERTA CRÍTICO: Linhas de transmissão não balizadas e relevo montanhoso na aproximação da pista 02.',
     officialSource: 'CENIPA / Relatório Final 2023',
+    officialReportUrl: 'https://dedalo.aer.mil.br/',
     investigationStatus: 'FINAL_REPORT_CONFIRMED',
     aircraftImage: 'https://images.unsplash.com/photo-1519074069444-1ba4ea16e6f0?auto=format&fit=crop&w=800&q=80',
     elevationAmsl: 610,
@@ -118,6 +131,8 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     reportNumber: 'A-022/CENIPA/2008',
     aircraftModel: 'Boeing 737-800 SFP',
     registration: 'PR-GTD',
+    category: 'AIRSPACE',
+    categoryLabel: 'Colisão em Voo / Espaço Aéreo',
     originIcao: 'MAO',
     originCity: 'Manaus',
     destIcao: 'BSB',
@@ -126,10 +141,11 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     severity: 'CATASTROPHIC',
     fatalitiesOnboard: 154,
     fatalitiesGround: 0,
-    causalFactor: 'Colisão em voo no FL370 com Embraer Legacy N600XL (Transponder inoperante / Falha ATC).',
+    causalFactor: 'Colisão em voo no FL370 com Embraer Legacy N600XL por desativação inadvertida do transponder e falha de comunicação ATC.',
     distanceToCorridorKm: 0.0,
-    terrainObstacleWarning: 'Rota de aerovia UZ4 sobre floresta amazônica densa (Serra do Cachimbo/MT). Resgate remoto.',
+    terrainObstacleWarning: 'Rota de aerovia UZ4 sobre floresta amazônica densa e inabitada (Serra do Cachimbo/MT). Isolamento geográfico total.',
     officialSource: 'CENIPA / NTSB',
+    officialReportUrl: 'https://dedalo.aer.mil.br/',
     investigationStatus: 'FINAL_REPORT_CONFIRMED',
     aircraftImage: 'https://images.unsplash.com/photo-1520437358207-323b43b50729?auto=format&fit=crop&w=800&q=80',
     elevationAmsl: 450,
@@ -147,6 +163,8 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     reportNumber: 'A-054/CENIPA/2007',
     aircraftModel: 'Airbus A320-233',
     registration: 'PR-MBK',
+    category: 'RUNWAY_EXCURSION',
+    categoryLabel: 'Excursão de Pista / Relevo Urbano',
     originIcao: 'POA',
     originCity: 'Porto Alegre',
     destIcao: 'CGH',
@@ -155,10 +173,11 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     severity: 'CATASTROPHIC',
     fatalitiesOnboard: 187,
     fatalitiesGround: 12,
-    causalFactor: 'Excursão de pista molhada sem grooving e manete em CLIMB desativando spoilers automáticos.',
+    causalFactor: 'Pouso com pista molhada sem grooving e manete de empuxo direito em CLIMB, impedindo abertura de spoilers.',
     distanceToCorridorKm: 0.2,
-    terrainObstacleWarning: 'Platô elevado no centro urbano denso de SP. Zona de escape nula na cabeceira 35L.',
+    terrainObstacleWarning: 'Aeródromo encravado em platô elevado na malha urbana central de São Paulo com ausência de RESA na época.',
     officialSource: 'CENIPA',
+    officialReportUrl: 'https://dedalo.aer.mil.br/',
     investigationStatus: 'FINAL_REPORT_CONFIRMED',
     aircraftImage: 'https://images.unsplash.com/photo-1508873696983-2df5293cb395?auto=format&fit=crop&w=800&q=80',
     elevationAmsl: 802,
@@ -176,6 +195,8 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     reportNumber: 'DCA09MA026',
     aircraftModel: 'Airbus A320-214',
     registration: 'N106US',
+    category: 'WEATHER',
+    categoryLabel: 'Fauna / Bird Strike',
     originIcao: 'LGA',
     originCity: 'LaGuardia (NY)',
     destIcao: 'CLT',
@@ -184,10 +205,11 @@ export const DOCUMENTED_ROUTE_CASES: RouteRiskAssessment[] = [
     severity: 'MAJOR',
     fatalitiesOnboard: 0,
     fatalitiesGround: 0,
-    causalFactor: 'Ingestão múltipla de aves migratórias (Bird Strike / Gansos Canadenses) e perda total de motores.',
+    causalFactor: 'Ingestão simultânea de aves migratórias (Gansos Canadenses) logo após a decolagem, causando perda total de propulsão.',
     distanceToCorridorKm: 1.8,
-    terrainObstacleWarning: 'Corredor de fauna aquática do Rio Hudson e área metropolitana ultra densa.',
+    terrainObstacleWarning: 'Rota sobre bacia fluvial do Hudson cercada por arranha-céus de Manhattan e Jersey City.',
     officialSource: 'NTSB',
+    officialReportUrl: 'https://www.ntsb.gov/',
     investigationStatus: 'FINAL_REPORT_CONFIRMED',
     aircraftImage: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=800&q=80',
     elevationAmsl: 0,
@@ -213,16 +235,23 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
   const [cases, setCases] = useState<RouteRiskAssessment[]>(DOCUMENTED_ROUTE_CASES);
   const [selectedCase, setSelectedCase] = useState<RouteRiskAssessment>(DOCUMENTED_ROUTE_CASES[0]);
   const [searchFilter, setSearchFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<RiskCategoryFilter>('ALL');
+  const [corridorBufferKm, setCorridorBufferKm] = useState<number>(40);
   const [showRightCard, setShowRightCard] = useState(true);
 
-  const filteredCases = cases.filter(c => 
-    c.code.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.registration.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.originIcao.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.destIcao.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.originCity.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.destCity.toLowerCase().includes(searchFilter.toLowerCase())
-  );
+  // Filtro combinado de busca textual e categoria de risco
+  const filteredCases = cases.filter(c => {
+    const matchesCategory = categoryFilter === 'ALL' || c.category === categoryFilter;
+    const matchesSearch = 
+      c.code.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      c.registration.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      c.originIcao.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      c.destIcao.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      c.originCity.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      c.destCity.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      c.causalFactor.toLowerCase().includes(searchFilter.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="relative w-full h-[calc(100vh-3.5rem)] bg-[#040415] text-[#e5e7eb] font-['JetBrains_Mono',monospace] overflow-hidden select-none">
@@ -242,7 +271,7 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
             lat: selectedCase.destLat,
             lon: selectedCase.destLon
           }}
-          corridorBufferKm={40}
+          corridorBufferKm={corridorBufferKm}
           occurrences={occurrences}
           hazards={hazards}
           selectedOccurrence={null}
@@ -265,18 +294,82 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
       </div>
 
       {/* OVERLAY TÁTICO: CARDS DE ROTAS E ACIDENTES DOCUMENTADOS NA LATERAL ESQUERDA */}
-      <div className="absolute top-16 left-5 bottom-4 z-20 w-[320px] flex flex-col pointer-events-none">
+      <div className="absolute top-16 left-5 bottom-4 z-20 w-[330px] flex flex-col pointer-events-none">
         
         {/* Barra de Filtro Rápida */}
-        <div className="pointer-events-auto mb-3 bg-[#13151b]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 flex items-center gap-2 shadow-2xl">
+        <div className="pointer-events-auto mb-2 bg-[#13151b]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 flex items-center gap-2 shadow-2xl">
           <Search className="w-4 h-4 text-slate-400 pl-0.5" />
           <input
             type="text"
-            placeholder="Filtrar por trecho, matrícula ou código..."
+            placeholder="Buscar por trecho, causa ou prefixo..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
             className="w-full bg-transparent border-none text-xs text-white placeholder-slate-400 focus:outline-none font-mono"
           />
+        </div>
+
+        {/* Pílulas de Filtro de Categoria de Perigo */}
+        <div className="pointer-events-auto mb-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <button
+            onClick={() => setCategoryFilter('ALL')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all shrink-0 ${
+              categoryFilter === 'ALL'
+                ? 'bg-[#ff8800] text-slate-950 font-bold shadow-sm'
+                : 'bg-[#13151b]/90 text-slate-300 border border-white/5 hover:border-white/20'
+            }`}
+          >
+            Todos ({cases.length})
+          </button>
+          <button
+            onClick={() => setCategoryFilter('OBSTACLES')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all shrink-0 ${
+              categoryFilter === 'OBSTACLES'
+                ? 'bg-[#ff8800] text-slate-950 font-bold shadow-sm'
+                : 'bg-[#13151b]/90 text-slate-300 border border-white/5 hover:border-white/20'
+            }`}
+          >
+            Obstáculos / Linhas
+          </button>
+          <button
+            onClick={() => setCategoryFilter('WEATHER')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all shrink-0 ${
+              categoryFilter === 'WEATHER'
+                ? 'bg-[#ff8800] text-slate-950 font-bold shadow-sm'
+                : 'bg-[#13151b]/90 text-slate-300 border border-white/5 hover:border-white/20'
+            }`}
+          >
+            Gelo / Clima
+          </button>
+          <button
+            onClick={() => setCategoryFilter('AIRSPACE')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all shrink-0 ${
+              categoryFilter === 'AIRSPACE'
+                ? 'bg-[#ff8800] text-slate-950 font-bold shadow-sm'
+                : 'bg-[#13151b]/90 text-slate-300 border border-white/5 hover:border-white/20'
+            }`}
+          >
+            Espaço Aéreo
+          </button>
+        </div>
+
+        {/* Seletor de Largura do Corredor Geodésico */}
+        <div className="pointer-events-auto mb-2 bg-[#13151b]/80 backdrop-blur-md border border-white/5 rounded-xl px-3 py-1.5 flex items-center justify-between text-[10px] font-mono">
+          <span className="text-slate-400">Corredor Geodésico:</span>
+          <div className="flex gap-1">
+            {[20, 40, 60].map(km => (
+              <button
+                key={km}
+                onClick={() => setCorridorBufferKm(km)}
+                className={`px-2 py-0.5 rounded transition ${
+                  corridorBufferKm === km
+                    ? 'bg-[#ff8800]/20 text-[#ff8800] border border-[#ff8800]/40 font-bold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ±{km}km
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Lista de Rotas com Ocorrências Oficiais */}
@@ -324,7 +417,7 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
                       {item.originIcao}
                     </span>
                     
-                    {/* Linha com Avião centralizado */}
+                    {/* Linha com Ícone de Alerta */}
                     <div className="flex-1 mx-3 flex items-center justify-center relative">
                       <div className="w-full h-[1.5px] bg-[#ff8800]/80"></div>
                       <div className="absolute bg-[#181a20] px-1">
@@ -467,7 +560,7 @@ export const MgaTacticalWorkspace: React.FC<TacticalWorkspaceProps> = ({
               {/* Botão de Ação: Abrir Relatório Oficial */}
               <div className="pt-1">
                 <button 
-                  onClick={() => window.open(`https://www2.fab.mil.br/cenipa/`, '_blank')}
+                  onClick={() => window.open(selectedCase.officialReportUrl || 'https://dedalo.aer.mil.br/', '_blank')}
                   className="w-full flex items-center justify-center gap-2 py-3 bg-[#ff8800] hover:bg-[#ff9900] text-slate-950 font-mono font-bold text-xs rounded-xl shadow-lg transition-all"
                 >
                   <FileText className="w-4 h-4" />
