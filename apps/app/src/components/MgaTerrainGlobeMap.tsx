@@ -147,14 +147,6 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
             tileSize: 256,
             attribution: '© OpenStreetMap contributors'
           },
-          'carto-dark': {
-            type: 'raster',
-            tiles: [
-              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
-            ],
-            tileSize: 256,
-            attribution: '© CartoDB'
-          },
           'satellite': {
             type: 'raster',
             tiles: [
@@ -168,7 +160,7 @@ export const MgaTerrainGlobeMap: React.FC<TerrainGlobeMapProps> = ({
           {
             id: 'carto-base',
             type: 'raster',
-            source: 'carto-dark',
+            source: 'osm-base',
             minzoom: 0,
             maxzoom: 19
           },
