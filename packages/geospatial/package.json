@@ -1,0 +1,13 @@
+{
+  "name": "@mega/geospatial",
+  "version": "0.1.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "private": true,
+  "dependencies": {
+    "@mega/types": "workspace:*",
+    "@turf/helpers": "^7.4.0",
+    "@turf/turf": "^7.4.0",
+    "geographiclib-geodesic": "^2.2.0"
+  }
+}

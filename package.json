@@ -1,0 +1,16 @@
+{
+  "name": "mga-aviation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MGA — Memória Geográfica da Aviação (Aviation Intelligence)",
+  "scripts": {
+    "dev:web": "pnpm --filter @mega/web dev",
+    "build": "pnpm --filter \"@mega/*\" build",
+    "lint": "pnpm --filter \"@mega/*\" lint",
+    "test": "pnpm --filter \"@mega/*\" test"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^5.1.0"
+  }
+}
