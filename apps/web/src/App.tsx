@@ -13,7 +13,8 @@ import {
   Layers,
   Radio,
   Search,
-  Server
+  Server,
+  ArrowLeft
 } from 'lucide-react';
 import { Occurrence, HazardObstacle, VisualClassification } from '@mega/types';
 import { HISTORICAL_OCCURRENCES_SEED, HAZARDS_SEED, AIRPORTS_DATABASE } from '@mega/shared';
@@ -24,10 +25,13 @@ import { AdminDashboardModal, AdminTelemetryData } from './components/AdminDashb
 import { PreflightBriefingReport } from './components/PreflightBriefingReport';
 import { FlightProfileView } from './components/FlightProfileView';
 import { IntelligenceAiBriefing } from './components/IntelligenceAiBriefing';
+import { MgaNavbar, MgaModuleId } from './components/MgaNavbar';
+import { MgaHome } from './components/MgaHome';
 
 export default function App() {
+  const [activeModule, setActiveModule] = useState<MgaModuleId>('home');
   const [origin, setOrigin] = useState('SBGR');
-  const [destination, setDestination] = useState('KJFK');
+  const [destination, setDestination] = useState('SBRJ');
   const [operationType, setOperationType] = useState('COMMERCIAL_SCHEDULED');
   const [corridorBuffer, setCorridorBuffer] = useState(60); // km
   const [activeTab, setActiveTab] = useState<'map' | 'occurrences' | 'hazards' | 'profile' | 'ai' | 'report'>('map');
@@ -167,60 +171,60 @@ export default function App() {
     }
   };
 
+  const handleSearchFromHome = (orig: string, dest: string, corridor: number) => {
+    setOrigin(orig);
+    setDestination(dest);
+    setCorridorBuffer(corridor);
+    setActiveModule('routes');
+    setActiveTab('map');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#050811] text-slate-100">
-      {/* Top Header */}
-      <header className="border-b border-slate-800 bg-[#070b14]/90 backdrop-blur sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-lg bg-sky-600/20 border border-sky-500/30 flex items-center justify-center text-sky-400 font-black text-xl tracking-wider">
-            M
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-xl tracking-wide text-white">MGA</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800 font-mono">
-                AVIATION INTELLIGENCE
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 font-medium">
-              Memória Geográfica da Aviação — História · Geografia · Prevenção
-            </p>
-          </div>
-        </div>
+      {/* Barra de Navegação Oficial com os 10 Módulos */}
+      <MgaNavbar 
+        activeModule={activeModule}
+        onSelectModule={(id) => {
+          setActiveModule(id);
+          if (id === 'map') setActiveTab('map');
+          if (id === 'routes') setActiveTab('map');
+          if (id === 'occurrences') setActiveTab('occurrences');
+          if (id === 'hazards') setActiveTab('hazards');
+          if (id === 'intelligence') setActiveTab('ai');
+          if (id === 'reports') setActiveTab('report');
+        }}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+      />
 
-        {/* Disclaimer Operacional */}
-        <div className="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
-          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>Não substitui NOTAM, cartas oficiais nem planejamento de despacho aeronáutico.</span>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button 
-            onClick={() => setIsAdminOpen(true)}
-            className="px-3.5 py-1.5 text-xs font-semibold rounded-md bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 flex items-center space-x-1.5 transition"
-          >
-            <Server className="w-3.5 h-3.5" />
-            <span>Painel Administrativo & Fontes</span>
-          </button>
-          <button className="px-3.5 py-1.5 text-xs font-semibold rounded-md bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-600/20 transition">
-            Acesso Piloto
-          </button>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Painel Lateral de Consulta (Formulário + Ficha de Ocorrência) */}
-        <aside className="w-full lg:w-[480px] shrink-0 border-r border-slate-800 bg-[#080d1a] flex flex-col h-auto lg:h-[calc(100vh-73px)] overflow-y-auto">
-          {/* Caixa de Pesquisa Pré-Voo */}
-          <div className="p-5 border-b border-slate-800/80 bg-slate-900/40">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
-                <Compass className="w-4 h-4 text-sky-400" />
-                <span>Consulta Pré-Voo de Rota</span>
-              </h2>
-              <span className="text-xs text-slate-400 font-mono">{totalRouteDistKm} km</span>
-            </div>
+      {/* Renderização Condicional: MGA Home vs Console Tático */}
+      {activeModule === 'home' ? (
+        <MgaHome 
+          onSearchRoute={handleSearchFromHome}
+          onExploreModule={(modId) => setActiveModule(modId as MgaModuleId)}
+        />
+      ) : (
+        /* Main Container Tático */
+        <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          {/* Painel Lateral de Consulta (Formulário + Ficha de Ocorrência) */}
+          <aside className="w-full lg:w-[480px] shrink-0 border-r border-slate-800 bg-[#080d1a] flex flex-col h-auto lg:h-[calc(100vh-56px)] overflow-y-auto">
+            {/* Caixa de Pesquisa Pré-Voo */}
+            <div className="p-5 border-b border-slate-800/80 bg-slate-900/40">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => setActiveModule('home')}
+                    className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                    title="Voltar para a Home"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+                    <Compass className="w-4 h-4 text-amber-400" />
+                    <span>02. MGA Routes</span>
+                  </h2>
+                </div>
+                <span className="text-xs text-amber-400 font-mono font-semibold">{totalRouteDistKm} km</span>
+              </div>
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
@@ -605,6 +609,8 @@ export default function App() {
           </div>
         </section>
       </main>
+      )}
+
       {/* Modal Administrativo de Inteligência de Dados */}
       <AdminDashboardModal
         isOpen={isAdminOpen}
