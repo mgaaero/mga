@@ -30,6 +30,8 @@ import { MgaHome } from './components/MgaHome';
 import { MgaMemoryView } from './components/MgaMemoryView';
 import { MgaHazardsView } from './components/MgaHazardsView';
 import { MgaIntelligenceView } from './components/MgaIntelligenceView';
+import { MgaAirportsView } from './components/MgaAirportsView';
+import { MgaEnterpriseView } from './components/MgaEnterpriseView';
 import { MgaMapControls, MapLayerConfig } from './components/MgaMapControls';
 import { SupabaseRouteService } from './services/supabase-route-service';
 import { Airport } from '@mega/types';
@@ -282,6 +284,19 @@ export default function App() {
           onSearchRoute={handleSearchFromHome}
           onExploreModule={(modId) => setActiveModule(modId as MgaModuleId)}
         />
+      ) : activeModule === 'airports' ? (
+        <MgaAirportsView
+          currentAirport={originAirport}
+          allAirports={AIRPORTS_DATABASE}
+          onSelectAirport={(apt) => {
+            setOrigin(apt.icao || apt.ident);
+            executeRemoteRouteSearch(apt.icao || apt.ident, destination, corridorBuffer);
+          }}
+          hazards={liveHazards.length > 0 ? liveHazards : HAZARDS_SEED}
+          occurrences={routeOccurrences.length > 0 ? routeOccurrences : HISTORICAL_OCCURRENCES_SEED}
+        />
+      ) : activeModule === 'enterprise' ? (
+        <MgaEnterpriseView />
       ) : (
         /* Main Container Tático */
         <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
